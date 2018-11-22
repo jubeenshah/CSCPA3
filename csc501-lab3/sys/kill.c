@@ -8,7 +8,7 @@
 #include <io.h>
 #include <q.h>
 #include <stdio.h>
-#include <lock.h>
+
 /*------------------------------------------------------------------------
  * kill  --  kill a process and remove it from the system
  *------------------------------------------------------------------------
@@ -17,7 +17,6 @@ SYSCALL kill(int pid)
 {
 	STATWORD ps;    
 	struct	pentry	*pptr;		/* points to proc. table for pid*/
-	struct lentry   *lptr;
 	int	dev;
 
 	disable(ps);
@@ -46,10 +45,7 @@ SYSCALL kill(int pid)
 	case PRCURR:	pptr->pstate = PRFREE;	/* suicide */
 			resched();
 
-	case PRWAIT:	semaph[pptr->psem].semcnt++;		
-			priority_inheritance(pptr->lock,pid, -1);
-
-
+	case PRWAIT:	semaph[pptr->psem].semcnt++;
 
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
