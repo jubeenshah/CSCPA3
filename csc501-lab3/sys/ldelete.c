@@ -1,41 +1,41 @@
+/* ldelete.c - ldelete */
+
+#include<conf.h>
 #include<kernel.h>
 #include<proc.h>
-#include<sem.h>
-#include<lock.h>
 #include<q.h>
+#include<lock.h>
+#include<stdio.h>
 
-int ldelete(int lockdescriptor)
-{
-	STATWORD ps;	
-	disable(ps);
+SYSCALL ldelete(int lockdescriptor){
+	STATWORD ps;
 	struct lentry *lptr;
+
 	int pid;
-	lptr=&locks[lockdescriptor];
-	if(lptr->l_state == AVAIL)
-	{	
+	int lock=lockdescriptor/LOCKMAXAROUND;
+
+	disable(ps);
+	int ret=lock_err(lockdescriptor);
+	if(ret==SYSERR||ret==DELETED){
 		restore(ps);
-		return SYSERR;
+		return (ret);
 	}
-	else
-	{
-		lptr->readers=0;
-		lptr->writer=0;
-		lptr->l_state= AVAIL;
-		int i=0;
-		if(nonempty(lptr->qhead))
-		{
-			while( (pid=getfirst(lptr->qhead)) != EMPTY)
-			{
-				proctab[pid].plwaitret = DELETED;
-                   		ready(pid,RESCHNO);
-			}
-			resched();
+
+	lptr=&locks[lock];
+	lptr->lstate=LDELETED;
+
+
+/*awakens all the waiting processes by moving them from the lock queue to the ready list.*/	
+	if(nonempty(lptr->lqhead)){
+		while((pid=getfirst(lptr->lqhead))!=EMPTY){
+			proctab[pid].plockret=DELETED;
+			ready(pid,RESCHNO);
 		}
-		for(i=0;i<NPROC;i++)
-		{
-			lock_proc[i][lockdescriptor]=0;
-		}
+		resched();
+	}
 	restore(ps);
-	return OK;
-	}
+	return (OK);
 }
+
+
+

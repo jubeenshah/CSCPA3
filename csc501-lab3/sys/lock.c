@@ -1,228 +1,136 @@
+/* lock.c - lock*/
+
 #include<kernel.h>
 #include<proc.h>
-#include<sem.h>
-#include<lock.h>
 #include<q.h>
-#include<sleep.h>
-int lock (int ldes1, int type, int priority)
-{
-	
+#include<lock.h>
+#include<stdio.h>
+
+
+SYSCALL lock(int ldes1, int type, int priority){
 	STATWORD ps;
-	disable(ps);
+
+	/* help me check lock if this process need wait*/
+	Bool needwait=FALSE;
+
+	int lock=ldes1/LOCKMAXAROUND;
+
 	struct lentry *lptr;
 	struct pentry *pptr;
-	lptr=&locks[ldes1];
-	pptr=&proctab[currpid];
-	if(lptr->l_state== AVAIL)
-	{
-		kprintf("WRONG LOCK STATE\n");
+
+	int i,lmaxprio;
+
+	disable(ps);
+
+	lptr=&locks[lock];
+	/* lock is invalid or not created.  */
+	int ret=lock_err(ldes1);;
+	if(ret==SYSERR||ret==DELETED){
 		restore(ps);
+		return (ret);
+	}
+
+	if(lptr->nreaders==0&&lptr->nwriters!=0){
+		needwait=TRUE;
+		/* write lock here */
+	}
+	else if(lptr->nreaders!=0&&lptr->nwriters==0 && type==WRITE){
+		needwait=TRUE;
+		/* read lock now but requested by write*/
+	}
+	else if(lptr->nreaders!=0&&lptr->nwriters==0 && type==READ){
+		lmaxprio=q[lptr->lqtail].qprev;
+		/* any higher priority writer process waiting for the lock*/
+		while(priority<q[lmaxprio].qkey){
+			if(q[lmaxprio].qtype==WRITE){
+				needwait=TRUE;
+				break;
+			}
+			lmaxprio=q[lmaxprio].qprev;
+		}
+	}
+	pptr=&proctab[currpid];
+	pptr->plockret=OK;
+	if(needwait){
+		pptr->pstate=PRLOCK;
+		pptr->lockid=ldes1/LOCKMAXAROUND;
+		insert(currpid,lptr->lqhead,priority);
+
+		q[currpid].qtype=type;
+		q[currpid].qtime=ctr1000;
+
+		pptr->plockret=OK;
+
+		/* update lprio in locks */
+		newlprio(lock);
+
+		/* update the pinh of the low priority process holding the lock */
+
+		struct lentry * helplptr=&locks[lock];
+		for(i=0;i<NPROC;++i){
+			if(helplptr->pidheld[i]==1){
+				newpinh(i);
+			}
+		}
+		resched();
+	}
+	else{
+		type==READ?lptr->nreaders++:lptr->nwriters++;
+		lptr->pidheld[currpid]=1;
+		pptr->lockheld[lock]=1;
+		newpinh(currpid);
+	}
+	restore(ps);
+	return (pptr->plockret);
+
+}
+
+	/* lock is invalid or not created.  */
+int lock_err(int ldes){
+	int lock=ldes/LOCKMAXAROUND;
+	int lockard=ldes-lock*LOCKMAXAROUND;
+	register struct lentry *lptr=&locks[lock];
+	if(isbadlock(lock) || lptr->lstate==LFREE || lockard!=lockaround){
 		return SYSERR;
 	}
-	int i=0;
-	for(i=0;i<NLOCKS;i++)
-	{
-		if(locks[i].writer >=2)
-		{
-			kprintf("WRONG WRITER COUNTER\n");
-			restore(ps);
-	                return SYSERR;
+	else if(lptr->lstate==LDELETED){
+		return DELETED;
+	}
+	return OK;
+}
+/* update the pinh of the low priority process holding the lock */
 
-		}
-	}
-	if(lptr->readers <0 && lptr->writer<0)
-	{
-			kprintf("WRONG  READ AND WRITER COUNTER\n");
-                        restore(ps);
-                        return SYSERR;
-	}
-	int flag=0;
-	//kprintf("Pid, lock, readers. %d, %d, %d\n", currpid, ldes1,lptr->readers);
-	if(lptr->readers ==0 && lptr->writer ==0)
-	{
-		lock_proc[currpid][ldes1]++;
-		if(type== READ)
-		{
-			flag=1;
-			lptr->readers++;
-			//kprintf("Pid, lock, readers. %d, %d, %d\n", currpid, ldes1,lptr->readers);
-			restore(ps);
-			resched();
-                        return OK;
-		}
-		else if (type==WRITE)
-		{
-			lptr->writer++;
-		//	kprintf("Pid, lock, writer %d, %d, %d\n", currpid, ldes1,lptr->writer);
-			restore(ps);
-			resched();
-                        return OK;
-		}
-		else
-		{
-			kprintf("Wrong type\n");
-			restore(ps);
-                        return SYSERR;
-		}
-	}
-	else if(lptr->readers >0 && lptr->writer ==0)
-	{
-		if(type==WRITE)
-		{
-			//kprintf("FOR C\n");
-			pptr=&proctab[currpid];
-			pptr->lock=ldes1;
-			pptr->plwaitret=OK;
-			pptr->pstate= PRWAIT;
-			insert(currpid, lptr -> qhead, priority);
-			q[currpid].qtype = type;
-			q[currpid].qwait = clktime;
-			priority_inheritance(ldes1, getprio(currpid),0);
-			resched();
-			restore(ps);
-			resched();
-			return pptr -> plwaitret;
-		}
-		else if(type==READ)
-		//if(type==READ)
-		{
-			//flag=1;
-			int i=0;
-			for(i=q[lptr->qtail].qprev; (i!= lptr->qhead) && (priority < q[i].qkey); i=q[i].qprev)
-			{
-			if(q[i].qtype==WRITE)
-			{
-					//kprintf("In E\n");
-					flag=1;
-					pptr=&proctab[currpid];
-                        		pptr->lock=ldes1;
-                        		pptr->plwaitret=OK;
-					pptr->pstate= PRWAIT;
-                    		   	insert(currpid, lptr -> qhead, priority);
-                  	      		q[currpid].qtype = type;
-                     		   	q[currpid].qwait = clktime;
-					priority_inheritance(ldes1, getprio(currpid),0);
-                        		resched();
-                        		restore(ps);
-					resched();
-                        		return pptr -> plwaitret;
+void newpinh(int pid){
+	int i,pmaxprio=-1;
+	int priocompare,tmppid;
+	register struct lentry *lptr;
+	register struct pentry *pptr=&proctab[pid];
+	for(i=0;i<NLOCKS;++i){
+		if(proctab[pid].lockheld[i]==1){
+			lptr=&locks[i];
+			if(pmaxprio<lptr->lprio){
+				pmaxprio=lptr->lprio;
 			}
-			}
-			if(flag==0)
-        {
-                        lock_proc[currpid][ldes1]++;
-                        lptr->readers++;
-                  //      kprintf("Pid, lock, readers..... %d, %d, %d\n", currpid, ldes1,lptr->readers);
-                        restore(ps);
-                        resched();
-                        return OK;
-
-        }
 		}
+		
 	}
-	/*if(flag==0)
-	{
-			lock_proc[currpid][ldes1]++;
-			lptr->readers++;
-			kprintf("Pid, lock, readers..... %d, %d, %d\n", currpid, ldes1,lptr->readers);
-			restore(ps);
-			resched();
-			return OK;
-	
-	} */
-	else if(lptr->readers == 0 && lptr->writer ==1)
-	{
-			//	kprintf("Test\n");
-				pptr=&proctab[currpid];
-                                pptr->lock=ldes1;
-                                pptr->plwaitret=OK;
-				pptr->pstate= PRWAIT;
-                                insert(currpid, lptr -> qhead, priority);
-                                q[currpid].qtype = type;
-                                q[currpid].qwait = clktime;
-				priority_inheritance(ldes1, getprio(currpid),0);
-                                resched();
-                                restore(ps);
-                                return pptr -> plwaitret;
-	}
-	else
-	{
-		restore(ps);
-		return OK;
-	}
-
+	proctab[pid].pinh=(pptr->pprio>pmaxprio)?0:pmaxprio;
 }
 
-void priority_inheritance(int ldes, int prio,int type)
-{
-	//kprintf("In priority inversion\n");
-	int i=0;
-	int max=-1;
-	if(type == -1)
-	{
-		//kprintf("pid after kill  %d\n", prio);		
-		struct lentry *lptr= &locks[ldes];
-		for(i=0;i<NPROC;i++)
-		{
-			//kprintf("lock_prc %d \n", lock_proc[i][ldes]);
-			if((getprio(i)> max) && i!= prio && lock_proc[i][ldes] == 0)
-			{
-		//		kprintf("in if after kill %d %d", i,getprio(i));
-				max=getprio(i);
-			}
-
+/*
+ indicating the maximum scheduling priority among all the processes
+waiting in the lock's wait queue.
+*/
+void newlprio(int lock){
+	int maxprio=-1,priocompare;
+	struct lentry *tmplptr=&locks[lock];
+	int curlockid=q[tmplptr->lqtail].qprev;
+	while(curlockid!=tmplptr->lqhead){
+		priocompare=(proctab[curlockid].pinh==0?proctab[curlockid].pprio:proctab[curlockid].pinh);
+		if(priocompare>maxprio){
+			maxprio=priocompare;
 		}
-		prio=max;
-		//kprintf("MAx prio = %d\n", prio);
+		curlockid=q[curlockid].qprev;
 	}
-	for(i=0;i<NPROC;i++)
-	{
-		//printf("--------------------\n");
-		if(type==-1)
-		{
-			if(lock_proc[i][ldes] > 0){
-			chprio(i,prio);
-			}
-		}
-		if(lock_proc[i][ldes] > 0 && (getprio(i) < prio))
-		{
-			//kprintf("In priority inversion i %d\n", i);
-			chprio(i,prio);
-		}
-	}	
-
+	tmplptr->lprio=maxprio;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

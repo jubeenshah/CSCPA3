@@ -14,7 +14,10 @@
 #include <io.h>
 #include <stdio.h>
 
-/*#define DETAIL */
+/*modified*/
+#include<lock.h>
+
+/*#define DETAIL*/
 #define HOLESIZE	(600)	
 #define	HOLESTART	(640 * 1024)
 #define	HOLEEND		((1024 + HOLESIZE) * 1024)  
@@ -112,7 +115,7 @@ int nulluser()				/* babysit CPU when no one home */
 	open(CONSOLE, console_dev, 0);
 
 	/* create a process to execute the user's main program */
-	resume(create((int *)main,INITSTK,INITPRIO,INITNAME,INITARGS));
+        resume(create((int *)main,INITSTK,INITPRIO,INITNAME,INITARGS));
 
 	while (TRUE)
 		/* empty */;
@@ -170,6 +173,9 @@ LOCAL int sysinit()
 	pptr->paddr = (WORD) nulluser;
 	pptr->pargs = 0;
 	pptr->pprio = 0;
+	/* modified */
+	pptr->pinh=0;
+	pptr->lockid=-1;
 	currpid = NULLPROC;
 
 	for (i=0 ; i<NSEM ; i++) {	/* initialize semaphores */
@@ -192,11 +198,14 @@ LOCAL int sysinit()
 	mon_init();	/* init monitor */
 //	ripinit();
 
+	/*modified*/
+	linit();
 #ifdef NDEVS
 	for (i=0 ; i<NDEVS ; i++ ) {	    
 	    init_dev(i);
 	}
 #endif
+
 
 	return(OK);
 }

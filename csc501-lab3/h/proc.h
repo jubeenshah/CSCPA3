@@ -9,6 +9,10 @@
 #define	NPROC		30		/*  allowed if not already done	*/
 #endif
 
+#ifndef NLOCKS
+#define NLOCKS 50
+#endif
+
 #ifndef	_NFILE
 #define _NFILE		20		/* # of files allowed */
 #endif
@@ -27,7 +31,10 @@
 #define	PRSUSP		'\006'		/* process is suspended		*/
 #define	PRWAIT		'\007'		/* process is on semaphore queue*/
 #define	PRTRECV		'\010'		/* process is timing a receive	*/
-#define LWAIT		'\011'
+
+/*modified*/
+#define PRLOCK      '\011'      /* process is locked  */
+
 /* miscellaneous process definitions */
 
 #define	PNMLEN		16		/* length of process "name"	*/
@@ -60,8 +67,13 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;		/* pageing dgram device		*/
 	int	pwaitret;
-	int 	plwaitret;
-	int 	lock;
+
+	/* modified */ /*initialize in initialize.c and create.c */
+	int pinh; /* the current inherited priority of the process default: 0*/
+	int lockheld[NLOCKS]; /* all the locks held by the process can be found  default: 0*/
+	int lockid;/* indicating the lock descriptor in whose wait queue the process is blocked. default: -1 */
+	/*int poprio*/;/* The original priority (pprio) with which a process is created.  */
+	int plockret;
 };
 
 
