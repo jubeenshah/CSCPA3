@@ -1,47 +1,38 @@
-/* lcreate.c - lcreate, newlock  */
+/* lcreate.c - create a lock */
 
-#include<kernel.h>
-#include<proc.h>
-#include<q.h>
-#include<lock.h>
-#include<stdio.h>
+#include <conf.h>
+#include <kernel.h>
+#include <proc.h>
+#include <q.h>
+#include <lock.h>
+#include <stdio.h>
 
-LOCAL int newlock();
-
-SYSCALL lcreate(){
-	STATWORD ps;
-	
-	int lock;
-
+/*------------------------------------------------------------------------
+ * lcreate  --  create and initialize a lock, returning its id
+ *------------------------------------------------------------------------
+ */
+SYSCALL lcreate()
+{
+	STATWORD ps;    
 	disable(ps);
 
-	if((lock=newlock())==SYSERR){
-		restore(ps);
-		return (SYSERR);
-	}	
-
-	restore(ps);
-	return (lock);
-}
-
-LOCAL int newlock(){
-	int lock;
-	int i;
-	
-	for(i=0;i<NLOCKS;++i){
+	int	i,lock;
+	for (i=0 ; i<NLOCKS ; i++) {
 		lock=nextlock--;
-		if(nextlock<0){
-			/* next NLOCKS around */
-			nextlock=NLOCKS-1;
-			lockaround++;
+		if (nextlock < 0)
+			nextlock = NLOCKS-1;
+		if (locktab[lock].lstatus == L_FREE) {
+			locktab[lock].lstatus = L_USED;
+			if(GDB)
+				kprintf("lock[%d] is allocated to proc[%d]:%s\n",
+				lock, currpid, proctab[currpid].pname);
+
+			restore(ps);
+			return(lock);
 		}
-		if(locks[lock].lstate!=LUSED){
-			locks[lock].lstate=LUSED;
-			locks[lock].nreaders=0;
-			locks[lock].nwriters=0;
-			return (lock*LOCKMAXAROUND+lockaround);
-		}
-	}	
-	/*no lockid available */
-	return (SYSERR);
+	}
+
+	/* @@@@@  lqhead and lqtail need 2nd thought @@@@ */
+	restore(ps);
+	return(SYSERR);
 }

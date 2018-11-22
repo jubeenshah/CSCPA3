@@ -8,20 +8,35 @@
 #include <io.h>
 #include <q.h>
 #include <stdio.h>
-
 #include <lock.h>
+
 /*------------------------------------------------------------------------
  * kill  --  kill a process and remove it from the system
  *------------------------------------------------------------------------
  */
 SYSCALL kill(int pid)
 {
-	int i;
 	STATWORD ps;    
 	struct	pentry	*pptr;		/* points to proc. table for pid*/
 	int	dev;
 
 	disable(ps);
+
+	int i;
+	for(i=0; i<NLOCKS; i++)
+	{
+		if(proctab[pid].locks[i].lstatus == L_USED)
+		{
+			if(GDB)
+				kprintf("in kill: going to release lock[%d] form proc[%d]\n",i,pid);
+			deque(pid, i);
+			proctab[currpid].locks[i].next =-1;
+			proctab[currpid].locks[i].lstate =-1;
+			proctab[currpid].locks[i].lprio =-1;	
+		}
+	}
+
+
 	if (isbadpid(pid) || (pptr= &proctab[pid])->pstate==PRFREE) {
 		restore(ps);
 		return(SYSERR);
@@ -52,17 +67,6 @@ SYSCALL kill(int pid)
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
 			break;
-	case PRLOCK:
-				dequeue(pid);
-				locks[pptr->lockid].pidheld[pid]=0;
-				newlprio(pptr->lockid);
-				for(i=0;i<NPROC;++i){
-					if(locks[pptr->lockid].pidheld[i]==1){
-						newpinh(i);
-					}
-				}	
-				pptr->pstate=PRFREE;
-				break;
 
 	case PRSLEEP:
 	case PRTRECV:	unsleep(pid);

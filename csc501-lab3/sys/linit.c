@@ -1,32 +1,22 @@
-/* linit.c - linit() */
+/* linit.c - initialize locks */
 
-#include<conf.h>
-#include<kernel.h>
-#include<proc.h>
-#include<q.h>
-#include<lock.h>
-#include<stdio.h>
+#include <conf.h>
+#include <kernel.h>
+#include <proc.h>
+#include <q.h>
+#include <lock.h>
+#include <stdio.h>
 
-struct lentry locks[NLOCKS];
-int nextlock;
-
-int lockaround;
-
-/* call in initialize.c */
 void linit(){
-	register struct lentry *lptr;
-	lockaround=0;
-	nextlock=NLOCKS-1;
-	int i,j;
-	for(i=0;i<NLOCKS;++i){
-		lptr=&locks[i];
-		lptr->lstate=LFREE;
-		lptr->lqtail=1+(lptr->lqhead= newqueue());
-		lptr->lprio=0;
-
-		for(j=0;j<NPROC;++j){
-			lptr->pidheld[j]=0;
-		}
-
-	}
+	int i;
+	for (i=0 ; i<NLOCKS ; i++) {	/* initialize semaphores */
+		locktab[i].lstatus = L_FREE;	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ need 2nd thought @@@@@@@@@@@
+		locktab[i].lstate = -1;
+		locktab[i].lprio = -1;
+		//@@@@ the queue still need to be implemented @@@@
+		locktab[i].head = -1;
+		locktab[i].next = -1;
+	}	
+	kprintf("lock initialized\n");
 }
+

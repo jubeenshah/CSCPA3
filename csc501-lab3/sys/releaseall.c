@@ -1,117 +1,139 @@
-/* releaseall.c - releaseall */
+/* releaseall.c - Release the specified lockes */
 
-#include<kernel.h>
-#include<proc.h>
-#include<stdio.h>
-#include<lock.h>
-#include<q.h>
+#include <conf.h>
+#include <kernel.h>
+#include <proc.h>
+#include <q.h>
+#include <lock.h>
+#include <stdio.h>
+void deque(int pid, int ldes);
 
+SYSCALL releaseall(nargs,args)
+	int	nargs;			/* number of args that follow	*/
+	long	args;			/* arguments (treated like an	*/
+					/* array in the code)		*/
+{
+	STATWORD 	ps;    
+	unsigned long	*a;		/* points to list of args	*/
+	int ldes;
+	int return_flag = 0;
+	disable(ps);
 
+	if(GDB)
+		kprintf("RRRRR: proc[%d]:%s \n",currpid, proctab[currpid].pname);
 
-int releaseall(int numlocks, int ldes1, ...){
-  STATWORD ps;
-  int i;
-  int ldes;
-  int lock;
-  register struct lentry *lptr;
-  unsigned long *a=(unsigned long *)(&ldes1);
-  /* for equal lock priorities */
-  int longreadertime=0,longwritertime=0;
-  int readerpid=-1,writerpid=-1;
-  int tmpprio;
+	a = (unsigned long *)(&args) + (nargs-1); /* last argument	*/
+	for(nargs; nargs > 0 ; nargs--)
+	{
+		if(GDB)
+			kprintf("*a = %d\n",*a);
+		ldes = *a--;
+		if(locktab[ldes].lstate == -1)
+		{
+			if(GDB)
+				kprintf("lock[%d] hasn't been used yet. No need to release\n",ldes);
+			return_flag = 1;
+			continue;
+		}
+		if(GDB)
+			kprintf("releasing lock[%d] status=%d type=%d prio=%d)\n", ldes, locktab[ldes].lstatus, locktab[ldes].lstate, locktab[ldes].lprio);
+		//for the global lock table, they should only concern about the lcok status.
+		if (locktab[ldes].lstatus == L_USED)
+		{
+			deque(currpid, ldes);
+			proctab[currpid].locks[ldes].lstatus = L_FREE;
+			proctab[currpid].locks[ldes].next =-1;
+			proctab[currpid].locks[ldes].lstate =-1;
+			proctab[currpid].locks[ldes].lprio =-1;	
+			//ready(pid,RESCHNO);	
+		}
+		else
+			if(GDB)
+				kprintf("ERROR: cannot release a free lock.\n");
+		//do something.	
+	}
 
-  Bool not_held=FALSE;
-
-  disable(ps);
-
-  while(numlocks-->0){
-    ldes=*a++;
-    lock=ldes/LOCKMAXAROUND;
-
-    lptr=&locks[lock];
-	int ret=lock_err(ldes);
-    if(ret==SYSERR||ret==DELETED){
-      not_held=TRUE;
-      continue;
-    }
-    lptr->pidheld[currpid]=0;
-    proctab[currpid].lockheld[lock]=0;
-    newpinh(currpid);
-
-    if(lptr->nwriters){
-      lptr->nwriters--;
-    }
-    else if(lptr->nreaders){
-      lptr->nreaders--;
-    }
-    /* no processes in the lock wait queues */
-    if(isempty(lptr->lqhead)){
-      continue;
-    }
-
-  /* decide which process hold the lock later*/
-  int tmppid=q[lptr->lqtail].qprev;
-  if(q[tmppid].qkey==q[q[tmppid].qprev].qkey){
-    /* equal priorities among readers or writers */
-    /*
-In the case of equal lock priorities among readers or writers,
-the lock will be first given to the reader or writer that has the longest waiting time (in milliseconds) on the lock.
-If a reader's lock priority is equal to the highest lock priority of the waiting writer and its waiting time is no more than 0.5 second longer,
-the reader should be given preference to acquire the lock over the waiting writer.
-    */
-    tmpprio=q[tmppid].qkey;
-    while(q[tmppid].qkey==tmpprio){
-        if(q[tmppid].qtype==READ && q[tmppid].qtime>longreadertime){
-          longreadertime=q[tmppid].qtime;
-          readerpid=tmppid;
-        }
-        else if(q[tmppid].qtype==WRITE && q[tmppid].qtime>longwritertime){
-          longwritertime=q[tmppid].qtime;
-          writerpid=tmppid;
-        }
-        tmppid=q[tmppid].qprev;
-    }
-    if(readerpid>=0&&writerpid>=0){
-      if(longreadertime-longwritertime<=500){
-        admit_valid_readers(lock);
-      }
-      else{
-        release(lock,writerpid);
-      }
-    }
-    else if(readerpid>=0){
-      admit_valid_readers(lock);
-    }
-    else if(writerpid>=0){
-      release(lock,writerpid);
-    }
-
-  }
-  else{
-      if(q[tmppid].qtype==READ && lptr->nwriters==0){
-        admit_valid_readers(lock);
-      }
-      else if(q[tmppid].qtype==WRITE && lptr->nreaders==0){
-		  release(lock,tmppid);
-      }
-  }
-
-
-    /*
-     On releasing a lock, the priority of the process has to be reset to
-     the maximum priority of all the processes in the wait queues of all the locks still held by the process.
-    */
-
-  }
-
-if(not_held==TRUE){
-  restore(ps);
-  return SYSERR;
-}
-else{
-  restore(ps);
-  resched();
-  return (OK);
+	if(GDB)
+		kprintf("RRRRR: proc[%d]:%s release done! going to resched\n",currpid, proctab[currpid].pname);
+	resched();
+	restore(ps);
+	if(return_flag)
+		return SYSERR;
+	return(OK);
 }
 
+void deque(int pid, int ldes){
+	int pre, curr;
+	int put_into_ready = 1;
+	curr = locktab[ldes].head;
+	if(GDB)
+		kprintf("in deque, head = proc[%d]\n",curr);
+	// removing the head.
+	if(curr == pid )
+	{
+		// removing the only process having this lock
+		if(proctab[curr].locks[ldes].next == -1)
+		{
+			locktab[ldes].head = -1;
+			//locktab[ldes].lstatus = L_FREE;
+			locktab[ldes].lstate = -1;
+			locktab[ldes].lprio = -1;
+			if(GDB)
+				kprintf("deque proc[%d]:%s.  No process waiting for lock[%d]. it's free now\n",pid, proctab[pid].pname,ldes);
+		}
+		else
+		{
+			locktab[ldes].head = proctab[curr].locks[ldes].next;
+			if(GDB)
+				kprintf("deque proc[%d]:%s.  proc[%d] is the NEW head in waiting Q of lock[%d].\n",pid, proctab[pid].pname, locktab[ldes].head, ldes);
+			int hpid = locktab[ldes].head;	// hpid ==>> process id with highest priority in waiting list.
+			if(locktab[ldes].lstate == READ && proctab[hpid].locks[ldes].lstate == READ)
+				put_into_ready = 0;
+			locktab[ldes].lstate =  proctab[hpid].locks[ldes].lstate;
+			locktab[ldes].lprio = proctab[hpid].locks[ldes].lprio;
+			if(GDB)
+				kprintf("now proc[%d]:%s(pstate= %d) get lock[%d]:{type=%d prio=%d} )\n",hpid, proctab[hpid].pname, proctab[hpid].pstate, ldes,locktab[ldes].lstate, locktab[ldes].lprio);
+			if(proctab[hpid].pstate == PRWAIT && put_into_ready == 1)
+			{
+				if(GDB)
+					kprintf("going to put pro[%d] into the ready Queue\n",hpid);
+				ready(hpid, RESCHNO);
+			}
+			
+		}
+		return;
+	}
+	// removing from somewhere in the middle of the waiting Queue.
+	pre = curr;
+	curr = proctab[curr].locks[ldes].next;
+	while(curr != -1){
+		if(curr == pid)
+		{
+			proctab[pre].locks[ldes].next = proctab[curr].locks[ldes].next;
+			if(GDB)
+				kprintf("proc[%d]:%s is removed from the queue.\n",pid, proctab[pid].pname);
+			int hpid = locktab[ldes].head;	// hpid ==>> process id with highest priority in waiting list.
+			if(locktab[ldes].lstate == READ && proctab[hpid].locks[ldes].lstate == READ)
+				put_into_ready = 0;
+			locktab[ldes].lstate =  proctab[hpid].locks[ldes].lstate;
+			locktab[ldes].lprio = proctab[hpid].locks[ldes].lprio;
+			if(GDB)
+				kprintf("now proc[%d]:%s(pstate= %d) get lock[%d]:{type=%d prio=%d} )\n",hpid, proctab[hpid].pname, proctab[hpid].pstate, ldes,locktab[ldes].lstate, locktab[ldes].lprio);
+			if(proctab[hpid].pstate == PRWAIT && put_into_ready == 1)
+			{
+				if(GDB)
+					kprintf("going to put pro[%d] into the ready Queue\n",hpid);
+				ready(hpid, RESCHNO);
+			}
+			return;
+		}
+		if(GDB)
+			kprintf("in deque while, curr=%d pid=%d",curr,pid);
+		pre = curr;
+		curr = proctab[curr].locks[ldes].next;
+		if(GDB)
+			kprintf(" nxet=%d\n",curr);
+	}
+	if(GDB)
+		kprintf("ERROR in deque: cann't found the lock!\n");
 }

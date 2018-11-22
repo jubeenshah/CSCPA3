@@ -20,57 +20,44 @@ int resched()
 	register struct	pentry	*optr;	/* pointer to old process entry */
 	register struct	pentry	*nptr;	/* pointer to new process entry */
 
-	/*priority in the ready list*/
-
-
-	/**/
-	int tmppid=q[rdytail].qprev;
-	int	reschedpid,reschedprio=-1;
-	while(tmppid!=rdyhead){
-/*		kprintf("%d (%d) -> ",proctab[tmppid].pinh==0?proctab[tmppid].pprio:proctab[tmppid].pinh,tmppid);*/
-		if(proctab[tmppid].pinh==0){
-			if(proctab[tmppid].pprio>reschedprio){
-				reschedprio=proctab[tmppid].pprio;
-				reschedpid=tmppid;
-			}
-		}
-		else{
-			if(proctab[tmppid].pinh>reschedprio){
-				reschedprio=proctab[tmppid].pinh;
-				reschedpid=tmppid;
-			}
-		}
-		tmppid=q[tmppid].qprev;
-	}
-
-
 	/* no switch needed if current process priority higher than next*/
-
+	preempt = QUANTUM;
+	if(0)
+		kprintf("current process[%d]: %s, lastkey()=%d, priority=%d\n", currpid,proctab[currpid].pname, lastkey(rdytail), proctab[currpid].pprio);
+	if(0)
+		kprintf("process state is %d, PRCURR=%d\n",proctab[currpid].pstate,PRCURR);
 	if ( ( (optr= &proctab[currpid])->pstate == PRCURR) &&
-reschedprio<(optr->pinh==0?optr->pprio:optr->pinh)) {
+	   (lastkey(rdytail)<optr->pprio)) {
 		return(OK);
 	}
-
+	
 	/* force context switch */
-
+	int proc;
 	if (optr->pstate == PRCURR) {
-		optr->pstate = PRREADY;
+		optr->pstate = PRREADY;											
+		if ((proc=q[rdytail].qprev) < NPROC)
+			if(0)
+				kprintf("before inserting, %s is in the tail of ready Q\n",proctab[proc].pname);
+		if(0)
+			kprintf("going to insert (%s) into ready Q\n",proctab[currpid].pname);
 		insert(currpid,rdyhead,optr->pprio);
 	}
 
 	/* remove highest priority process at end of ready list */
-	currpid=reschedpid;
-	nptr=&proctab[currpid];
-
+	if ((proc=q[rdytail].qprev) < NPROC)
+			if(0)
+				kprintf("now, the tail of ready Q is %s\n",proctab[proc].pname);
+	nptr = &proctab[ (currpid = getlast(rdytail)) ];
 	nptr->pstate = PRCURR;		/* mark it currently running	*/
-	dequeue(reschedpid);
-	
+	if(0)
+		kprintf("new process is %s\n",nptr->pname);
 #ifdef	RTCLOCK
 	preempt = QUANTUM;		/* reset preemption counter	*/
 #endif
-
+	if(0)
+		kprintf("going to resched from %s to [%d]:%s\n",optr->pname,currpid,nptr->pname);
 	ctxsw((int)&optr->pesp, (int)optr->pirmask, (int)&nptr->pesp, (int)nptr->pirmask);
-
+	
 	/* The OLD process returns here when resumed. */
 	return OK;
 }
