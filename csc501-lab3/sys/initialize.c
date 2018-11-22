@@ -13,6 +13,7 @@
 #include <q.h>
 #include <io.h>
 #include <stdio.h>
+#include <lock.h>
 
 /*#define DETAIL */
 #define HOLESIZE	(600)	
@@ -112,7 +113,7 @@ int nulluser()				/* babysit CPU when no one home */
 	open(CONSOLE, console_dev, 0);
 
 	/* create a process to execute the user's main program */
-	resume(create((int *)main,INITSTK,INITPRIO,INITNAME,INITARGS));
+        resume(create((int *)main,INITSTK,INITPRIO,INITNAME,INITARGS));
 
 	while (TRUE)
 		/* empty */;
@@ -178,6 +179,8 @@ LOCAL int sysinit()
 	}
 
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
+
+	linit(); //
 
 #ifdef	MEMMARK
 	_mkinit();			/* initialize memory marking */

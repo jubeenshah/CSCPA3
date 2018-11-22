@@ -7,14 +7,6 @@
 
 unsigned long currSP;	/* REAL sp of current process */
 extern int ctxsw(int, int, int, int);
-/*-----------------------------------------------------------------------
- * resched  --  reschedule processor to highest priority ready process
- *
- * Notes:	Upon entry, currpid gives current process id.
- *		Proctab[currpid].pstate gives correct NEXT state for
- *			current process if other than PRREADY.
- *------------------------------------------------------------------------
- */
 int resched()
 {
 	register struct	pentry	*optr;	/* pointer to old process entry */
@@ -35,8 +27,9 @@ int resched()
 	}
 
 	/* remove highest priority process at end of ready list */
+	
 
-	nptr = &proctab[ (currpid = getlast(rdytail)) ];
+	nptr = &proctab[(currpid = getlast(rdytail))];
 	nptr->pstate = PRCURR;		/* mark it currently running	*/
 #ifdef	RTCLOCK
 	preempt = QUANTUM;		/* reset preemption counter	*/
