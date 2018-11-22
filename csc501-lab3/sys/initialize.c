@@ -13,6 +13,10 @@
 #include <q.h>
 #include <io.h>
 #include <stdio.h>
+#include <lock.h>
+
+
+struct lentry locktab[NLOCKS];
 
 /*#define DETAIL */
 #define HOLESIZE	(600)	
@@ -177,6 +181,15 @@ LOCAL int sysinit()
 		sptr->sqtail = 1 + (sptr->sqhead = newqueue());
 	}
 
+	for(i = 0;i<NPROC;i++){
+		proctab[i].pwaitret = OK;
+		proctab[i].pinh = 0;
+		proctab[i].wait_lock = -1;
+		int j = 0;
+		for(j; j < NPROC;j++){
+			proctab[i].plocks[j] = -1;
+		}
+	}
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
 
 #ifdef	MEMMARK
@@ -198,6 +211,8 @@ LOCAL int sysinit()
 	}
 #endif
 
+	linit();
+	
 	return(OK);
 }
 

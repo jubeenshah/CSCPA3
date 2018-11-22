@@ -35,3 +35,6 @@ SYSCALL sdelete(int sem)
 	restore(ps);
 	return(OK);
 }
+
+
+// TODO : verify the wait time concept

@@ -66,6 +66,12 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	pptr->pirmask[0] = 0;
 	pptr->pnxtkin = BADPID;
 	pptr->pdevs[0] = pptr->pdevs[1] = pptr->ppagedev = BADDEV;
+	
+	// For locks
+	pptr->pinh = 0;
+	pptr->wait_lock = -1;
+	for(i = 0; i < NLOCKS; i++)
+		pptr->plocks = -1;
 
 		/* Bottom of stack */
 	*saddr = MAGIC;
