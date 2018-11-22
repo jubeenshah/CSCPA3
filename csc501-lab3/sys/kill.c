@@ -40,11 +40,6 @@ SYSCALL kill(int pid)
 	send(pptr->pnxtkin, pid);
 
 	freestk(pptr->pbase, pptr->pstklen);
-
-	release_locks(pid);
-	remove_waits(pid);
-	reset_locks(pid);
-
 	switch (pptr->pstate) {
 
 	case PRCURR:	pptr->pstate = PRFREE;	/* suicide */
