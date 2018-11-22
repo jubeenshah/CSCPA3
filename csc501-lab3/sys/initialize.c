@@ -178,7 +178,8 @@ LOCAL int sysinit()
 	}
 
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
-
+	linit();
+	kprintf("After linit\n");
 #ifdef	MEMMARK
 	_mkinit();			/* initialize memory marking */
 #endif
