@@ -3,7 +3,7 @@
 #include <proc.h>
 #include <lock.h>
 #include <stdio.h>
-#include <lock.h>
+
 
 #define DEFAULT_LOCK_PRIO 20
 
@@ -116,8 +116,7 @@ void test2 ()
 
         sleep (15);
         kprintf("output=%s\n", output2);
-    // ABD(ABD in arbitrary orders)CCEE
-        assert(mystrncmp(output2,"ABABDDCCEE",10)==0,"Test 2 FAILED\n");
+        assert(mystrncmp(output2,"ABDADBCCEE",10)==0,"Test 2 FAILED\n");
         kprintf ("Test 2 OK\n");
 }
 
@@ -164,21 +163,25 @@ void test3 ()
         kprintf("-start reader A, then sleep 1s. reader A(prio 25) blocked on the lock\n");
         resume(rd1);
         sleep (1);
+//	kprintf("getprio %d\n", getprio(wr1));
 	assert (getprio(wr1) == 25, "Test 3 failed");
 
         kprintf("-start reader B, then sleep 1s. reader B(prio 30) blocked on the lock\n");
         resume (rd2);
 	sleep (1);
+//	kprintf("getprio %d\n", getprio(wr1));
 	assert (getprio(wr1) == 30, "Test 3 failed");
 
 	kprintf("-kill reader B, then sleep 1s\n");
 	kill (rd2);
 	sleep (1);
+//	kprintf("getprio %d\n", getprio(wr1));
 	assert (getprio(wr1) == 25, "Test 3 failed");
 
 	kprintf("-kill reader A, then sleep 1s\n");
 	kill (rd1);
 	sleep(1);
+	//kprintf("getprio %d\n", getprio(wr1));
 	assert(getprio(wr1) == 20, "Test 3 failed");
 
         sleep (8);
@@ -188,15 +191,45 @@ void test3 ()
 int main( )
 {
         /* These test cases are only used for test purpose.
-         * The provided results do not guarantee your correctness.
-         * You need to read the PA2 instruction carefully.
-         */
+ *          * The provided results do not guarantee your correctness.
+ *                   * You need to read the PA2 instruction carefully.
+ *                            */
 	test1();
+	//lock(1,1,10);
+	//int a=0;
+	//a=releaseall(3,1,2,2);
+	//kprintf("a=%d\n", a);
 	test2();
 	test3();
 
         /* The hook to shutdown QEMU for process-like execution of XINU.
-         * This API call exists the QEMU process.
-         */
+ *          * This API call exists the QEMU process.
+ *                   */
         shutdown();
 }
+
+
+
+
+
+
+/* user.c - main */
+
+/*#include <conf.h>
+#include <kernel.h>
+#include <proc.h>
+#include <stdio.h>
+*/
+/*------------------------------------------------------------------------
+ *  main  --  user main program
+ *------------------------------------------------------------------------
+ */
+/*int main()
+{
+	kprintf("\n\nHello World, Xinu@QEMU lives\n\n");
+*/
+        /* The hook to shutdown QEMU for process-like execution of XINU.
+         * This API call terminates the QEMU process.
+         */
+  /*      shutdown();
+}*/
