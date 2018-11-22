@@ -7,10 +7,10 @@
 #include <sem.h>
 #include <mem.h>
 #include <io.h>
-#include <paging.h>
+#include <stdio.h>
 
 LOCAL int newpid();
-void createPageDir(int);
+
 /*------------------------------------------------------------------------
  *  create  -  create a process to start running a procedure
  *------------------------------------------------------------------------
@@ -95,9 +95,8 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	*--saddr = 0;		/* %esi */
 	*--saddr = 0;		/* %edi */
 	*pushsp = pptr->pesp = (unsigned long)saddr;
-	createPageDir(pid);
-	restore(ps);
 
+	restore(ps);
 	return(pid);
 }
 
@@ -118,45 +117,3 @@ LOCAL int newpid()
 	}
 	return(SYSERR);
 }
-
-void createPageDir(int pid)
-{
-	int frame=1;
-	pd_t *pdir;
-	get_frm(&frame);
-//	kprintf("pid= %d, frame=%d, status= %d\n", pid,frame,frm_tab[frame].fr_status);
-	pdir=(FRAME0+frame)*NBPG;
-	proctab[pid].pdbr=(FRAME0 +frame)*NBPG;
-	frm_tab[frame].fr_status=FRM_MAPPED;
-	frm_tab[frame].fr_type= FR_DIR;
-	frm_tab[frame].fr_pid=pid;	
-	int i;
-//	kprintf("before: pdir 0x%08x\n", pdir);
-	for(i=0;i<1024;i++)
-	{
-		if(i<4)
-		{
-			pdir->pd_write=1;
-			pdir->pd_pres=1;
-			pdir->pd_base= FRAME0+i+1;		
-			pdir++;
-		}
-		else	
-		{
-			pdir->pd_write=1;
-			pdir->pd_pres=0;
-			pdir++;
-		}
-	}
-//	kprintf("before: pdir 0x%08x\n", pdir);
-//	kprintf("pdir = 0x%08x, pid= %d\n", pdir, pid);
-}	
-
-
-
-
-
-
-
-
-

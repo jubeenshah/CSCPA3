@@ -10,6 +10,8 @@
 	.globl	pause
 	.globl	halt
 	.globl	getirmask
+	.globl	spurious_irq7
+	.globl	spurious_irq15
 
 /*------------------------------------------------------------------------
  * Xtrap - trap entry
@@ -17,7 +19,6 @@
  */
 Xtrap:
 	call	trap
-/*	movw	$OCW1_2,%al */
 	movb	$OCW1_2,%al
 	outb	%al,$EOI
 	popl	%eax		/* exception # */
@@ -92,7 +93,7 @@ defevec:
 		.long	_Xint36
 		.long	_Xint37
 		.long	_Xint38
-		.long	_Xint39
+		.long	spurious_irq7
 		.long	_Xint40
 		.long	_Xint41
 		.long	_Xint42
@@ -100,7 +101,7 @@ defevec:
 		.long	_Xint44
 		.long	_Xint45
 		.long	_Xint46
-		.long	_Xint47
+		.long	spurious_irq15
 
 /*---------------------------------------------------------
  * pause: halt the processor until an interrupt occurs
@@ -119,6 +120,7 @@ pause:
 halt:
 	jmp halt
 	ret
+
 
 /*---------------------------------------------------------
  * enable all interrupts
@@ -187,3 +189,15 @@ getirmask:
 	movl	4(%esp),%edx
 	movw	%ax,(%edx)
 	ret
+
+spurious_irq7:
+	mov	$EOI,%al
+	outb	%al,$OCW1_2
+	iret
+
+spurious_irq15:
+	mov	$EOI,%al
+	outb	%al,$OCW1_2
+	mov	$EOI,%al
+	outb	%al,$OCW2_2
+	iret

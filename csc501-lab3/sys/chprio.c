@@ -3,17 +3,16 @@
 #include <conf.h>
 #include <kernel.h>
 #include <proc.h>
+#include <q.h>
+#include <stdio.h>
 
 /*------------------------------------------------------------------------
  * chprio  --  change the scheduling priority of a process
  *------------------------------------------------------------------------
  */
-SYSCALL chprio(pid,newprio)
-	int	pid;
-	int	newprio;		/* newprio > 0			*/
+SYSCALL chprio(int pid, int newprio)
 {
 	STATWORD ps;    
-	int	oldprio;
 	struct	pentry	*pptr;
 
 	disable(ps);
@@ -22,16 +21,7 @@ SYSCALL chprio(pid,newprio)
 		restore(ps);
 		return(SYSERR);
 	}
-	oldprio = pptr->pprio;
 	pptr->pprio = newprio;
-	switch (pptr->pstate) {
-	case PRREADY:
-		insert( dequeue(pid), rdyhead, newprio);
-	case PRCURR:
-		resched();
-	default:
-		break;
-	}
 	restore(ps);
-	return(oldprio);
+	return(newprio);
 }
