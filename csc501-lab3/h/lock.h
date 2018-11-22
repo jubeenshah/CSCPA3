@@ -1,35 +1,46 @@
-/* sem.h - isbadsem */
+/*
+ * lock.h
+ *
+ *  Created on: Nov 30, 2015
+ *      Author: mns
+ */
 
 #ifndef _LOCK_H_
 #define _LOCK_H_
 
 #ifndef	NLOCKS
-#define	NLOCKS		50	/* number of semaphores, if not defined	*/
+#define	NLOCKS		50	/* number of locks, if not defined	*/
 #endif
 
-#define	L_FREE 		0		/* this lock is free		*/
-#define	L_USED 		1		/* this lock is used		*/
+/* lock types used in int lock (int ldes1, int type, int priority) */
 
-/* No Need To Define these */
-#define	READ 		0		/* this lock is read		*/
-#define	WRITE		1		/* this lock is write		*/
-#define	DELETED 	2		/* this lock is deleted		*/
+#define NONE -1
 
-struct	lentry	{	/* lock table entry		*/
-	int	lstatus;	/* SFREE or SUSED		*/
-	int lstate;		/* READ WRITE or DELETED */
-	int lprio;		/* the priority of a lock */
-	int	ltime;		/* the time begin waiting for the lock		*/
-	int head;		/* q index of head of list		*/
-	int next;
+#define READ 1
+#define WRITE 0
+
+#define	LFREE	'\01'		/* this lock is free		*/
+#define	LUSED	'\02'		/* this lock is used		*/
+
+struct lentry {
+	char lstate; /* the state SFREE or SUSED		*/
+	int lqhead; /* q index of head of list		*/
+	int lqtail; /* q index of tail of list		*/
+	int ltype; /* read lock or write lock */
+	int lrefNum; /* current reference of this lock */
 };
 
+struct lstat {
+	int type;
+	long int time;
+};
 
-extern	struct	lentry	locktab[];
-extern	int	nextlock;
-extern  int GDB;  // Global Debugger.
-extern void deque(int pid, int ldes);  
-extern int 	highest_write_prio(int ldes);
-#define	isbadsem(s)	(s<0 || s>=NSEM)
+extern struct lentry locks[];
+extern struct lstat locktab[][NLOCKS];
+
+extern int nextlock;
+extern int refNum;
+
+#define	isbadlock(l)	(l<0 || l>=NLOCKS)
 
 #endif

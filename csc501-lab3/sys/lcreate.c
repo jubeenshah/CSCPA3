@@ -1,38 +1,52 @@
-/* lcreate.c - create a lock */
+/*
+ * lcreate.c
+ *
+ *  Created on: Nov 28, 2015
+ *      Author: mns
+ */
 
-#include <conf.h>
 #include <kernel.h>
 #include <proc.h>
 #include <q.h>
 #include <lock.h>
 #include <stdio.h>
 
+LOCAL int newlock();
+
 /*------------------------------------------------------------------------
- * lcreate  --  create and initialize a lock, returning its id
+ * lcreate  --  create and initialize a lock, returning its descriptor
  *------------------------------------------------------------------------
  */
-SYSCALL lcreate()
-{
-	STATWORD ps;    
+SYSCALL lcreate() {
+	STATWORD ps;
+	int lock;
 	disable(ps);
+	if ((lock = newlock()) == SYSERR) {
+		restore(ps);
+		return SYSERR;
+	}
+	restore(ps);
+	return lock;
+}
 
-	int	i,lock;
-	for (i=0 ; i<NLOCKS ; i++) {
-		lock=nextlock--;
+/*------------------------------------------------------------------------
+ * newlock  --  allocate an unused lock and return its index
+ *------------------------------------------------------------------------
+ */
+LOCAL int newlock() {
+	int lock;
+	int i;
+
+	for (i = 0; i < NLOCKS; i++) {
+		lock = nextlock--;
 		if (nextlock < 0)
-			nextlock = NLOCKS-1;
-		if (locktab[lock].lstatus == L_FREE) {
-			locktab[lock].lstatus = L_USED;
-			if(GDB)
-				kprintf("lock[%d] is allocated to proc[%d]:%s\n",
-				lock, currpid, proctab[currpid].pname);
-
-			restore(ps);
-			return(lock);
+			nextlock = NLOCKS - 1;
+		if (locks[lock].lstate == LFREE) {
+			++refNum;
+			locks[lock].lstate = LUSED;
+			locks[lock].lrefNum = refNum;
+			return (refNum);
 		}
 	}
-
-	/* @@@@@  lqhead and lqtail need 2nd thought @@@@ */
-	restore(ps);
-	return(SYSERR);
+	return (SYSERR);
 }

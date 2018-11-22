@@ -1,70 +1,63 @@
-/* releaseall.c - Release the specified lockes */
+/*
+ * ldelete.c
+ *
+ *  Created on: Nov 28, 2015
+ *      Author: mns
+ */
 
-#include <conf.h>
 #include <kernel.h>
 #include <proc.h>
 #include <q.h>
 #include <lock.h>
 #include <stdio.h>
 
-SYSCALL ldelete(int ldes){
-	STATWORD 	ps;    
-	int curr, pre;
+/*------------------------------------------------------------------------
+ * ldelete  --  delete a lock by releasing its table entry
+ *------------------------------------------------------------------------
+ */
+
+int ldelete(int ldesc) {
+	STATWORD ps;
+	int pid, i ,flag = 0;
+	struct lentry *lptr;
+
 	disable(ps);
 
-	if(GDB)
-		kprintf("DDDDD: proc[%d]:%s, trying to delete lock[%d]\n",currpid, proctab[currpid].pname);
-
-	if(GDB)
-		kprintf("deleting lock[%d] status=%d type=%d prio=%d)\n", ldes, locktab[ldes].lstatus, locktab[ldes].lstate, locktab[ldes].lprio);
-	if(locktab[ldes].lstatus == L_FREE)
-	{
-		if(GDB)
-			kprintf("no need to delete lock[%d]\n",ldes);
-		restore(ps);
-		return(OK);
-	}
-	curr = locktab[ldes].head;
-	while(curr != -1)
-	{
-		pre = curr;
-		curr = proctab[curr].locks[ldes].next;
-		proctab[pre].locks[ldes].lstatus = L_FREE;
-		proctab[pre].locks[ldes].lstate = DELETED;
-		proctab[pre].locks[ldes].lprio = -1;	
-		proctab[pre].locks[ldes].next = -1;
-		if(GDB)
-			kprintf("lock[%d] deleted for proc[%d]:%s, next is proc[%d]\n",ldes,pre,proctab[pre].pname,curr);
-		if(proctab[pre].pstate == PRWAIT)
-		{
-			if(GDB)
-				kprintf("going to put pro[%d] into the ready Queue\n",pre);
-			ready(pre, RESCHNO);
+	for(i=0;i<NLOCKS;i++){
+		if(locks[i].lrefNum == ldesc){
+			ldesc = i;
+			flag = 1;
+			break;
 		}
 	}
 
-
-	//for the global lock table, they should only concern about the lcok status.
-	if (locktab[ldes].lstatus == L_USED)
-	{
-		locktab[ldes].head = -1;
-		locktab[ldes].lstatus = L_FREE;
-		locktab[ldes].lstate = -1;
-		locktab[ldes].lprio = -1;
-		//ready(pid,RESCHNO);	
-	}
-	else
-	{
-		if(GDB)
-			kprintf("delete a free lock.(no need to do anything, including resched)\n head=%d,status=%d,state=%d,prio=%d\n",locktab[ldes].head, locktab[ldes].lstatus, locktab[ldes].lstate, locktab[ldes].lprio);
+	if(flag == 0){
 		restore(ps);
-		return OK;
+		return SYSERR;
 	}
-	//do something.	
+	if (isbadlock(ldesc) || locks[ldesc].lstate == LFREE) {
+		restore(ps);
+		return SYSERR;
+	}
 
-	if(GDB)
-		kprintf("DDDDD: delete done! going to resched\n",currpid, proctab[currpid].pname);
-	resched();
+	lptr = &locks[ldesc];
+	lptr->lstate = LFREE;
+	lptr->ltype = NONE;
+
+	if (nonempty(lptr->lqhead)) {
+		while ((pid = getfirst(lptr->lqhead)) != EMPTY) {
+			proctab[pid].pwaitret = DELETED;
+			ready(pid, RESCHNO);
+		}
+		resched();
+	}
+
+	for (i = 0; i < NPROC; i++) {
+		locktab[i][ldesc].time = -1;
+		locktab[i][ldesc].type = NONE;
+
+	}
 	restore(ps);
-	return(OK);
+	return (OK);
 }
+

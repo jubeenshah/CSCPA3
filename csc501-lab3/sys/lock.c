@@ -1,6 +1,10 @@
-/* lock.c - Acquisition of a lock for read/write */
+/*
+ * lock.c
+ *
+ *  Created on: Nov 28, 2015
+ *      Author: mns
+ */
 
-#include <conf.h>
 #include <kernel.h>
 #include <proc.h>
 #include <q.h>
@@ -8,229 +12,81 @@
 #include <stdio.h>
 #include <sleep.h>
 
+int lock(int ldesc, int type, int priority) {
+	STATWORD ps;
+	struct lentry *lptr;
+	struct pentry *pptr;
 
-/**
- * In your implementation, no readers should be kept waiting unless 
- * (i) a writer has already obtained the lock, or 
- * (ii) there is a higher priority writer already waiting for the lock. 
- * 
- * ----------------- below is for releaseall.c -------------------------
- * Hence, when a writer or the last reader releases a lock, the lock 
- * should be next given to a process having the highest waiting priority 
- * for the lock. In the case of equal waiting priorities, the lock will 
- * be given to the process that has the longest waiting time 
- * (in milliseconds) on the lock. 
- * 
- * If the waiting priorities are equal and the waiting time difference 
- * is within 1 second, writers should be given preference to acquire 
- * the lock over readers. 
- * 
- * In any case, if a reader is chosen to have a lock, then 
- * all the other waiting readers having priority not less than 
- * that of the highest-priority waiting writer for the same lock 
- * should also be admitted.
- */
-
-
-/**
-Control is returned only when the process is able to acquire the lock. 
-Otherwise, the calling process is blocked until the lock can be obtained.
-
-Acquiring a lock has the following meaning:
-1. The lock is free, i.e., no process is owning it. 
-	In this case the process that requested the lock gets the lock 
-	and sets the type of locking as READ or WRITE.
-
-2. Lock is already acquired:
-	a. For READ:
-		If the requesting process has specified the lock type as READ 
-		and has sufficiently high priority (not less than the highest 
-		priority writer process waiting for the lock), it acquires 
-		the lock, else not.
-	b. For WRITE:
-		In this case, the requesting process does not get the lock 
-		as WRITE locks are exclusive.
- */
-
-LOCAL insert_lock(int ldes, int prio);
-int highest_write_prio(int ldes);
-
-int lock (int ldes, int type, int priority){
-	STATWORD ps; 
+	int shouldWait = 0, i, flag = 0;
+	int lockid;
 	disable(ps);
-	// we should also store information in the proctab as the local information
-	// while keep the locktab[] monitor the status of all the locks.
-	proctab[currpid].locks[ldes].lstatus = L_USED;
-	proctab[currpid].locks[ldes].lstate =type;
-	proctab[currpid].locks[ldes].lprio = priority;
-	/**
-	*	Acquiring a lock has the following meaning:
-	*	1. The lock is free, i.e., no process is owning it. 
-	*	In this case the process that requested the lock gets the lock 
-	*	and sets the type of locking as READ or WRITE.
-	**/
-	if(GDB)
-		kprintf("LLLL: proc[%d]:%s requesting for lock[%d] type=%d prio=%d)\n",currpid,proctab[currpid].pname,ldes,type,priority);
-	//for the global lock table, they should only concern about the lcok status.
-	if (locktab[ldes].lstatus == L_USED && locktab[ldes].lstate == -1)
-	{
-		locktab[ldes].lstate = type;
-		locktab[ldes].lprio = priority;
-		proctab[currpid].locks[ldes].ltime = clktime-1;
-		if(GDB)
-			kprintf("%s@lock[%d].time=%d, TTTTTTTTTTTTT\n",proctab[currpid].pname,ldes,proctab[currpid].locks[ldes].ltime);
-		if(GDB)
-			kprintf("lock[%d] state: FREE to USED, type is %d, piro=%d\n",ldes,type,priority);
-		insert_lock(ldes, priority);
-		restore(ps);
-		return OK;
-	}
 
-		
-	/**
-	*	2. Lock is already acquired:
-			a. For READ:
-				If the requesting process has specified the lock type as READ 
-				and has sufficiently high priority (not less than the highest 
-				priority writer process waiting for the lock), it acquires 
-				the lock, else not.
-			b. For WRITE:
-				In this case, the requesting process does not get the lock 
-				as WRITE locks are exclusive.
-	**/
-	if (locktab[ldes].lstate == WRITE)
-	{
-		if(GDB)
-			kprintf("lock[%d] state: WRITE, going to insert and resched\n",ldes);
-		proctab[currpid].pwaitret = OK;
-		proctab[currpid].pstate = PRWAIT;
-		proctab[currpid].locks[ldes].ltime = clktime;
-		if(GDB)
-			kprintf("%s@lock[%d].time=%d, TTTTTTTTTTTTT\n",proctab[currpid].pname,ldes,proctab[currpid].locks[ldes].ltime);
-		insert_lock(ldes, priority);
-		resched();
-		// restore(ps);
-		// return OK;
-	}
-	
-	if ( locktab[ldes].lstate == READ )
-	{
-		if(GDB)
-			kprintf("lock[%d] state: READ \nrequesting process's read_prio = %d, highest_write_prio=%d\n",ldes,priority,highest_write_prio(ldes));
-		proctab[currpid].locks[ldes].ltime = clktime;
-		if(GDB)
-			kprintf("%s@lock[%d].time=%d, TTTTTTTTTTTTT\n",proctab[currpid].pname,ldes,proctab[currpid].locks[ldes].ltime);
-		insert_lock(ldes, priority);
-		if(type == READ && priority >= highest_write_prio(ldes))
-		{
-			if(GDB)
-				kprintf("proc[%d]:%s can READ\n",currpid,proctab[currpid].pname);
-			int curr; 
-			curr = locktab[ldes].head;
-			while(curr != -1){
-				if(GDB)
-					kprintf("traversing lock_Q: pid=%d\n",curr);
-				curr = proctab[curr].locks[ldes].next;
-			}
-			restore(ps);
-			return OK;
+	for (i = 0; i < NLOCKS; i++) {
+		if (locks[i].lrefNum == ldesc) {
+			lockid = i;
+			flag = 1;
+			break;
 		}
-		if(GDB)
-			kprintf("Cannot acquire the lock, going to resched\n");
-		proctab[currpid].pwaitret = OK;
-		proctab[currpid].pstate = PRWAIT;
-		resched();
-		// restore(ps);
-		// return OK;
 	}
 
-	/**
-	 * You must implement your lock system such that waiting on a lock will 
-	 * return a new constant DELETED instead of OK when returning due to a 
-	 * deleted lock. This will indicate to the user that the lock was deleted 
-	 * and not unlocked. As before, any calls to lock() after the lock is 
-	 * deleted should return SYSERR.
-	 */
-	if (proctab[currpid].locks[ldes].lstate == DELETED)
-	{
-		if(GDB)
-			kprintf("ERROR: DELETED\n");
+	if (flag == 0) {
 		restore(ps);
-		return DELETED;
+		return SYSERR;
 	}
+
+	if (isbadlock(lockid) || (lptr = &locks[lockid])->lstate == LFREE) {
+		restore(ps);
+		return SYSERR;
+	}
+
+	if ((pptr = &proctab[currpid])->pwaitret == DELETED) {
+		pptr->pwaitret = OK;
+		restore(ps);
+		return SYSERR;
+	}
+
+	/* some process is holding the lock */
+	if (lptr->ltype != NONE) {
+		if (lptr->ltype == READ) { /* a reader is holding the lock */
+			if (type == READ) { /* the current process is a reader */
+				if (nonempty(lptr->lqhead)) {
+					int hprio = lastkey(lptr->lqtail);
+					if (hprio > priority) {
+						shouldWait = 1;
+					}
+				}
+			} else { /* the current process is a writer*/
+				shouldWait = 1;
+			}
+		} else { /* a writer is holding the lock */
+			shouldWait = 1;
+		}
+	} else { /* no process is holding the lock i.e it is created but not acquired */
+		shouldWait = 0;
+	}
+
+	if (shouldWait) {
+
+		//kprintf("%s is put in the queue",proctab[currpid].pname);
+		(pptr = &proctab[currpid])->pstate = PRWAIT;
+		insert(currpid, lptr->lqhead, priority);
+		pptr->pwaitret = OK;
+		locktab[currpid][lockid].type = type;
+		locktab[currpid][lockid].time = clktime;
+		resched();
+
+		restore(ps);
+		return pptr->pwaitret;
+	} else {
+		lptr->ltype = type;
+		locktab[currpid][lockid].type = type;
+		locktab[currpid][lockid].time = -1;
+
+		restore(ps);
+		return (OK);
+	}
+
 	restore(ps);
 	return OK;
 }
 
-int highest_write_prio(int ldes){
-	int curr,pre; 
-	curr = locktab[ldes].head;
-	if(curr == -1)
-		return -1;
-	while(curr != -1)	{
-		if(proctab[curr].locks[ldes].lstate == WRITE)
-			return proctab[curr].locks[ldes].lprio;
-		pre = curr;
-		curr = proctab[curr].locks[ldes].next;
-		//kprintf("pre:proc[%d].prio=%d, curr: %d\n",pre->pid, proctab[pre->pid].locks[ldes].lprio, curr==NULL?-1:curr->pid);
-	}
-	return -1;
-}
-
-
-/* should be indexed through their pid. */
-LOCAL insert_lock(int ldes, int insert_prio){
-	int pre, curr;
-	curr = locktab[ldes].head;
-	if(GDB)
-		kprintf("IIIIIIIIIIIIII   head=%d\n",curr);
-	if(curr == -1){
-		//curr = (struct lqueue *) getmem(sizeof(struct lqueue *));
-		locktab[ldes].head = currpid;
-		locktab[ldes].next = -1;
-		proctab[currpid].locks[ldes].head = currpid;
-		proctab[currpid].locks[ldes].next = -1;
-		if(GDB)
-			kprintf("head = %d nxet=%d\n",locktab[ldes].head, locktab[ldes].next);
-		if(GDB)
-			kprintf("proc[%d]:%s enter the waiting Q of locktab[%d], its piro=%d\n",currpid,proctab[currpid].pname,ldes,insert_prio);
-		return;
-	}
-	int curr_prio = proctab[curr].locks[ldes].lprio;
-	// if(insert_prio > curr_prio)	{
-	// 	proctab[currpid].locks[ldes].head = currpid;
-	// 	proctab[currpid].locks[ldes].next = locktab[ldes].head;
-	// 	if(GDB)
-	// 		kprintf("proc[%d]:%s .prio=%d > head_of_waiting_Q( proc[%d] )\n",currpid,proctab[currpid].pname,insert_prio,locktab[ldes].head);
-	// 	locktab[ldes].head = currpid;
-	// 	return;
-	// }
-	pre = curr;
-	curr = proctab[curr].locks[ldes].next;
-	while(curr != -1 && insert_prio <= curr_prio)	{
-		if(insert_prio == curr_prio)
-		{
-			int curr_t = proctab[currpid].locks[ldes].ltime;
-			int old_t = proctab[curr].locks[ldes].ltime;  
-			int curr_type = proctab[currpid].locks[ldes].lstate;
-			int old_type = proctab[curr].locks[ldes].lstate;
-			if(GDB)
-				kprintf("c_t=%d, o_t=%d, c_tp=%d, o_tp=%d\n",curr_t,old_t,curr_type,old_type);
-			// WRITE = 1, READ = 0;
-			if(curr_t - old_t <= 1 && curr_type > old_type)
-				break;
-		}
-		if(GDB)
-			kprintf("pre:proc[%d].prio=%d, curr: %d\n",pre, proctab[pre].locks[ldes].lprio, curr);
-		pre = curr;
-		curr = proctab[curr].locks[ldes].next;
-		if(curr != -1)
-			curr_prio = proctab[curr].locks[ldes].lprio;
-	}
-	proctab[pre].locks[ldes].next = currpid;
-	proctab[currpid].locks[ldes].next = curr;
-	if(GDB)
-		kprintf("insert proc[%d] between proc[%d] and proc[%d]\n",currpid,pre,curr);
-	return;
-
-}
