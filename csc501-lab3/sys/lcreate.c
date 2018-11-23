@@ -17,8 +17,8 @@ SYSCALL lcreate(){
 	int lock;
 
 	disable(ps);
-  lock=newlock();
-	if(lock == -1){
+
+	if((lock=newlock() == -1){
 		restore(ps);
 		return (-1);
 	}
