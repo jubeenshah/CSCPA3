@@ -26,9 +26,11 @@ switch (ret) {
   case -SETONE:
         restore(ps);
         return (ret);
+        break;
   case -SETSIX:
         restore(ps);
         return (ret);
+        break;
 }
 
 lptr=&locks[lock];
@@ -38,7 +40,7 @@ int emptyIS = lptr->lqhead;
 if (nonempty(emptyIS)) {
   /* code */
   int emptyISAgain = lptr->lqhead;
-  pid = getfirst(emptyISAgain)
+  pid = getfirst(emptyISAgain);
   while (pid != EMPTY ) {
     /* code */
     ready(pid, RESCHNO);
