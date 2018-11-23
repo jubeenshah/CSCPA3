@@ -345,15 +345,15 @@ SYSCALL lock(int ldes1, int type, int priority){
 		needwait=1;
 		/* write lock here */
 	}
-	else if(lptr->nreaders!=SETZERO&&lptr->nwriters==SETZERO && type==WRITE){
+	else if(lptr->nreaders!=SETZERO&&lptr->nwriters==SETZERO && type==(SETONE + SETONE)){
 		needwait=1;
 		/* read lock now but requested by write*/
 	}
-	else if(lptr->nreaders!=SETZERO&&lptr->nwriters==SETZERO && type==READ){
+	else if(lptr->nreaders!=SETZERO&&lptr->nwriters==SETZERO && type==1){
 		lmaxprio=q[lptr->lqtail].qprev;
 		/* any higher priority writer process waiting for the lock*/
 		while(priority<q[lmaxprio].qkey){
-			if(q[lmaxprio].qtype==WRITE){
+			if(q[lmaxprio].qtype==(SETONE + SETONE)){
 				needwait=1;
 				break;
 			}
@@ -386,7 +386,7 @@ SYSCALL lock(int ldes1, int type, int priority){
 		resched();
 	}
 	else{
-		type==READ?lptr->nreaders++:lptr->nwriters++;
+		type==1?lptr->nreaders++:lptr->nwriters++;
 		lptr->pidheld[currpid]=SETONE;
 		pptr->lockheld[lock]=SETONE;
 		newpinh(currpid);
@@ -425,7 +425,7 @@ void newpinh(int pid){
 		}
 
 	}
-	proctab[pid].pinh=(pptr->pprio>pmaxprio)?0:pmaxprio;
+	proctab[pid].pinh=(pptr->pprio>pmaxprio)?SETZERO:pmaxprio;
 }
 
 /*
