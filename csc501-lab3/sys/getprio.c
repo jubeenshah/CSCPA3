@@ -16,9 +16,10 @@ SYSCALL getprio(int pid)
 	struct	pentry	*pptr;
 
 	disable(ps);
-	pptr = &proctab[pid]->pstate;
+	pptr = &proctab[pid];
+	int checkPPTR = pptr->pstate;
 	int checkISBadPID = isbadpid(pid);
-	if (checkISBadPID || pptr == PRFREE) {
+	if (checkISBadPID || checkPPTR == PRFREE) {
 		restore(ps);
 		return -1;
 	}
