@@ -429,19 +429,31 @@ int lock_err(int ldes){
 /* update the pinh of the low priority process holding the lock */
 
 void newpinh(int pid){
-	int i,pmaxprio=-SETONE;
-	int priocompare,tmppid;
+	int i;
+  int pmaxprio = -SETONE;
+	int priocompare;
+  int tmppid;
 	register struct lentry *lptr;
 	register struct pentry *pptr=&proctab[pid];
-	for(i=SETZERO;i<NLOCKS;++i){
-		if(proctab[pid].lockheld[i]==SETONE){
-			lptr=&locks[i];
-			if(pmaxprio<lptr->lprio){
-				pmaxprio=lptr->lprio;
-			}
-		}
-
-	}
+	// for(i=SETZERO;i<NLOCKS;++i){
+	// 	if(proctab[pid].lockheld[i]==SETONE){
+	// 		lptr=&locks[i];
+	// 		if(pmaxprio<lptr->lprio){
+	// 			pmaxprio=lptr->lprio;
+	// 		}
+	// 	}
+	// }
+  i = SETZERO;
+  while (i < NLOCKS) {
+    /* code */
+    if(proctab[pid].lockheld[i]==SETONE){
+      lptr=&locks[i];
+      if(pmaxprio<lptr->lprio){
+        pmaxprio=lptr->lprio;
+      }
+    }
+    i = i + SETONE;
+  }
 	proctab[pid].pinh=(pptr->pprio>pmaxprio)?SETZERO:pmaxprio;
 }
 
