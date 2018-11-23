@@ -17,8 +17,8 @@ SYSCALL lcreate(){
 	int lock;
 
 	disable(ps);
-
-	if((lock=newlock())==-1){
+  lock=newlock()
+	if((lock)==-1){
 		restore(ps);
 		return (-1);
 	}
@@ -46,5 +46,5 @@ LOCAL int newlock(){
 		}
 	}
 	/*no lockid available */
-	return (SYSERR);
+	return (-1);
 }
