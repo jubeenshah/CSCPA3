@@ -18,14 +18,16 @@ SYSCALL getprio(int pid)
 	disable(ps);
 	if (isbadpid(pid) || (pptr = &proctab[pid])->pstate == PRFREE) {
 		restore(ps);
-		return(SYSERR);
+		return -1;
 	}
 	restore(ps);
 	if (pptr->pinh == SETZERO) {
 		/* code */
-		return(pptr->pprio);
+		int returnValue = pptr->pprio;
+		return(returnValue);
 	}
-	return(pptr->pinh);
+	int returnPinhVal = pptr->pinh;
+	return(returnPinhVal);
 
 }
 
