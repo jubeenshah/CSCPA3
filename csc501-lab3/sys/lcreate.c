@@ -18,9 +18,9 @@ SYSCALL lcreate(){
 
 	disable(ps);
   lock=newlock();
-	if((lock)==-1){
+	if(lockv== -1){
 		restore(ps);
-		return (-1);
+		return -1;
 	}
 
 	restore(ps);
@@ -29,22 +29,39 @@ SYSCALL lcreate(){
 
 LOCAL int newlock(){
 	int lock;
-	int i;
+	int index;
 
-	for(i=SETZERO;i<NLOCKS;++i){
-		lock=nextlock--;
-		if(nextlock<SETZERO){
-			/* next NLOCKS around */
-			nextlock=NLOCKS-SETONE;
-			lockaround++;
-		}
-		if(locks[lock].lstate!=LUSED){
-			locks[lock].lstate=LUSED;
-			locks[lock].nreaders=SETZERO;
-			locks[lock].nwriters=SETZERO;
-			return (lock*LOCKMAXAROUND+lockaround);
-		}
-	}
+	// for(i=SETZERO;i<NLOCKS;++i){
+	// 	lock=nextlock--;
+	// 	if(nextlock<SETZERO){
+	// 		/* next NLOCKS around */
+	// 		nextlock=NLOCKS-SETONE;
+	// 		lockaround++;
+	// 	}
+	// 	if(locks[lock].lstate!=LUSED){
+	// 		locks[lock].lstate=LUSED;
+	// 		locks[lock].nreaders=SETZERO;
+	// 		locks[lock].nwriters=SETZERO;
+	// 		return (lock*LOCKMAXAROUND+lockaround);
+	// 	}
+	// }
+  index = SETZERO;
+  while (index < NLOCKS) {
+    /* code */
+    lock=nextlock--;
+    if(nextlock<SETZERO){
+      /* next NLOCKS around */
+      nextlock=NLOCKS-SETONE;
+      lockaround++;
+    }
+    if(locks[lock].lstate!=LUSED){
+      locks[lock].lstate=LUSED;
+      locks[lock].nreaders=SETZERO;
+      locks[lock].nwriters=SETZERO;
+      return (lock*LOCKMAXAROUND+lockaround);
+    }
+    index = index + SETONE;
+  }
 	/*no lockid available */
 	return (-1);
 }
