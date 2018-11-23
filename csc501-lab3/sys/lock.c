@@ -26,16 +26,20 @@ SYSCALL lock(int ldes1, int type, int priority) {
   lptr = &locks[lock];
   int ret = lock_err(ldes1);
 
-  switch (ret) {
-    case -SETONE:
-          restore(ps);
-          return (ret);
-          break;
-    case -SETSIX:
-          restore(ps);
-          return (ret);
-          break;
-  }
+  // switch (ret) {
+  //   case -SETONE:
+  //         restore(ps);
+  //         return (ret);
+  //         break;
+  //   case -SETSIX:
+  //         restore(ps);
+  //         return (ret);
+  //         break;
+  // }
+  if(ret==-1||ret==-6){
+		restore(ps);
+		return (ret);
+	}
 
   int checkNreader = lptr->nreaders;
   int checkNWriters = lptr->nwriters;
@@ -43,7 +47,11 @@ SYSCALL lock(int ldes1, int type, int priority) {
   if (checkNreader == SETZERO && checkNWriters != SETZERO) {
     /* code */
     needToWait = 1;
-  } else if (checkNreader == SETZERO && checkNWriters == SETZERO && type == READ) {
+  } else if (checkNreader != SETZERO && checkNWriters == SETZERO && type == WRITE) {
+    /* code */
+    needToWait = 1;
+  }
+  else if (checkNreader != SETZERO && checkNWriters == SETZERO && type == READ) {
     /* code */
     int tail = lptr->lqtail;
     lmaxPrio = q[tail].qprev;
