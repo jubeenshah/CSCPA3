@@ -421,7 +421,7 @@ int lock_err(int ldes){
 	if( checkBadLock || checkLockState == LFREE || lockard!=lockaround) {
 		return -1;
 	}
-	else if(checkLockState==LDELETED){
+	else if(checkLockState=='\03'){
 		return -6;
 	}
 	return 1;
