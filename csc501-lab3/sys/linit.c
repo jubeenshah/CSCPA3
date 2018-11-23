@@ -16,22 +16,39 @@ void linit(){
 	lockaround = SETZERO;
   int setNextLock = NLOCKS-SETONE;
 	nextlock   = setNextLock ;
-	int i,j;
+	int i;
+  int indexDos;
 
-	for(i=SETZERO;i<NLOCKS;++i){
-		lptr=&locks[i];
+	// for(i=SETZERO;i<NLOCKS;++i){
+	// 	lptr=&locks[i];
+	// 	lptr->lstate=LFREE;
+	// 	lptr->lqtail=SETONE+(lptr->lqhead= newqueue());
+	// 	lptr->lprio=SETZERO;
+  //
+  //   indexDos = SETZERO;
+  //   while (indexDos < NPROC) {
+  //     /* code */
+  //     lptr->pidheld[indexDos]=SETZERO;
+  //     indexDos = indexDos + SETONE;
+  //   }
+  //
+	// }
+  i = SETZERO;
+  while (i < NLOCKS) {
+    /* code */
+    lptr=&locks[i];
 		lptr->lstate=LFREE;
 		lptr->lqtail=SETONE+(lptr->lqhead= newqueue());
 		lptr->lprio=SETZERO;
 
-		// for(j=SETZERO;j<NPROC;++j){
-		// 	lptr->pidheld[j]=SETZERO;
-		// }
-    j = SETZERO;
-    while (j < NPROC) {
+    indexDos = SETZERO;
+    while (indexDos < NPROC) {
       /* code */
-      lptr->pidheld[j]=SETZERO;
-      j = j + SETONE;
+      lptr->pidheld[indexDos]=SETZERO;
+      indexDos = indexDos + SETONE;
     }
-	}
+    i = i + SETONE;
+
+
+  }
 }
