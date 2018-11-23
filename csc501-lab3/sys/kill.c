@@ -63,7 +63,8 @@ SYSCALL kill(int pid)
 				while (index < NPROC) {
 					/* code */
 					int LockIDSet = pptr->lockid;
-					if(locks[LockIDSet].pidheld[index] == SETONE){
+					int checkIfSet = locks[LockIDSet].pidheld[index];
+					if(checkIfSet == SETONE){
 						newpinh(index);
 					}
 					index = index + SETONE;
