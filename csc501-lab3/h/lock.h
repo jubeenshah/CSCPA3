@@ -28,7 +28,7 @@ struct lentry {
   int   nwriters;
   int   lprio;
   int   pidheld[NPROC];
-}
+};
 
 extern struct lentry locks[];
 extern unsigned long ctr1000;
