@@ -41,12 +41,13 @@ LOCAL int newlock(){
       nextlock   = NLOCKS - SETONE;
       lockaround = lockaround + SETONE;
     }
-    if(locks[lock].lstate!=LUSED){
-      locks[lock].lstate  =LUSED;
-      locks[lock].nreaders=SETZERO;
-      locks[lock].nwriters=SETZERO;
-      int valToReturn  = lock * 10000;
-      valToReturn = valToReturn + lockaround;
+    int checkState = locks[lock].lstate;
+    if(checkState != LUSED){
+      locks[lock].lstate    = LUSED;
+      locks[lock].nreaders  = SETZERO;
+      locks[lock].nwriters  = SETZERO;
+      int valToReturn       = lock * 10000;
+      valToReturn           = valToReturn + lockaround;
       return (valToReturn);
     }
     index = index + SETONE;
