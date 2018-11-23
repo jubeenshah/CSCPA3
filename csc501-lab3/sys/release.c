@@ -10,7 +10,7 @@ void release(int lock,int tmppid){
 	int index = SETZERO;
     register struct lentry *lptr=&locks[lock];
     int newNReaders = lptr->nreaders++;
-    int newNWriters = lptr->nwriters++
+    int newNWriters = lptr->nwriters++;
 	q[tmppid].qtype==READ?newNReaders:newNWriters;
 
     lptr->pidheld[tmppid]=index;
