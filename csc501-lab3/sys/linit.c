@@ -34,7 +34,7 @@ void linit(){
       lptr->pidheld[indexDos]=SETZERO;
       indexDos = indexDos + SETONE;
     }
-    i = i + SETONE;
+    index = index + SETONE;
 
 
   }
