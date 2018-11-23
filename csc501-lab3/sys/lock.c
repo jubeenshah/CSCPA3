@@ -394,21 +394,21 @@ SYSCALL lock(int ldes1, int type, int priority){
 		/* update the pinh of the low priority process holding the lock */
 
 		struct lentry * helplptr=&locks[lock];
-		// for(i=SETZERO;i<30;++i){
-    //   int checkPIDHeld = helplptr->pidheld[i];
-		// 	if(checkPIDHeld == SETONE){
-		// 		newpinh(i);
-		// 	}
-		// }
-    i = SETZERO;
-    while (i < 30) {
-      /* code */
+		for(i=SETZERO;i<30;++i){
       int checkPIDHeld = helplptr->pidheld[i];
 			if(checkPIDHeld == SETONE){
 				newpinh(i);
 			}
-      i = i + 1;
-    }
+		}
+    // i = SETZERO;
+    // while (i < 30) {
+    //   /* code */
+    //   int checkPIDHeld = helplptr->pidheld[i];
+		// 	if(checkPIDHeld == SETONE){
+		// 		newpinh(i);
+		// 	}
+    //   i = i + 1;
+    // }
 		resched();
 
 	}
