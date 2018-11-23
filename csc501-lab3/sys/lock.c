@@ -329,7 +329,8 @@ SYSCALL lock(int ldes1, int type, int priority){
 	struct lentry *lptr;
 	struct pentry *pptr;
 
-	int i,lmaxprio;
+	int i;
+  int lmaxprio;
 
 	disable(ps);
 
@@ -341,15 +342,17 @@ SYSCALL lock(int ldes1, int type, int priority){
 		return (ret);
 	}
 
-	if(lptr->nreaders==SETZERO&&lptr->nwriters!=SETZERO){
+  int checkNReaders = lptr->nreaders;
+  int checkNWriters = lptr->nwriters;
+	if(checkNReaders ==SETZERO&&checkNWriters !=SETZERO){
 		needwait=1;
 		/* write lock here */
 	}
-	else if(lptr->nreaders!=SETZERO&&lptr->nwriters==SETZERO && type==(SETONE + SETONE)){
+	else if(checkNReaders!=SETZERO&&checkNWriters==SETZERO && type==(SETONE + SETONE)){
 		needwait=1;
 		/* read lock now but requested by write*/
 	}
-	else if(lptr->nreaders!=SETZERO&&lptr->nwriters==SETZERO && type==1){
+	else if(checkNReaders!=SETZERO&&checkNWriters==SETZERO && type==1){
 		lmaxprio=q[lptr->lqtail].qprev;
 		/* any higher priority writer process waiting for the lock*/
 		while(priority<q[lmaxprio].qkey){
