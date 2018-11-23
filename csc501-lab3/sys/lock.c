@@ -435,14 +435,6 @@ void newpinh(int pid){
   int tmppid;
 	register struct lentry *lptr;
 	register struct pentry *pptr=&proctab[pid];
-	// for(i=SETZERO;i<NLOCKS;++i){
-	// 	if(proctab[pid].lockheld[i]==SETONE){
-	// 		lptr=&locks[i];
-	// 		if(pmaxprio<lptr->lprio){
-	// 			pmaxprio=lptr->lprio;
-	// 		}
-	// 	}
-	// }
   i = SETZERO;
   while (i < NLOCKS) {
     /* code */
@@ -456,7 +448,6 @@ void newpinh(int pid){
     i = i + SETONE;
   }
   int setMaxPrio = pptr->pprio;
-	//proctab[pid].pinh=(setMaxPrio>pmaxprio)?SETZERO:pmaxprio;
   if (setMaxPrio>pmaxprio) {
     /* code */
     proctab[pid].pinh = SETZERO;
@@ -465,20 +456,17 @@ void newpinh(int pid){
   }
 }
 
-/*
- indicating the maximum scheduling priority among all the processes
-waiting in the lock's wait queue.
-*/
 void newlprio(int lock){
-	int maxprio=-SETONE,priocompare;
+	int maxprio = -SETONE;
+  int priocompare;
 	struct lentry *tmplptr=&locks[lock];
 	int curlockid=q[tmplptr->lqtail].qprev;
-	while(curlockid!=tmplptr->lqhead){
-		priocompare=(proctab[curlockid].pinh==SETZERO?proctab[curlockid].pprio:proctab[curlockid].pinh);
+	while(q[tmplptr->lqtail].qprev != tmplptr->lqhead){
+		priocompare=(proctab[q[tmplptr->lqtail].qprev].pinh==SETZERO?proctab[q[tmplptr->lqtail].qprev].pprio:proctab[q[tmplptr->lqtail].qprev].pinh);
 		if(priocompare>maxprio){
 			maxprio=priocompare;
 		}
-		curlockid=q[curlockid].qprev;
+		q[tmplptr->lqtail].qprev=q[q[tmplptr->lqtail].qprev].qprev;
 	}
 	tmplptr->lprio=maxprio;
 }
