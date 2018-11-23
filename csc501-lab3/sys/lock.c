@@ -416,7 +416,9 @@ int lock_err(int ldes){
 	int lock=ldes/10000;
 	int lockard=ldes-lock*10000;
 	register struct lentry *lptr=&locks[lock];
-	if(isbadlock(lock) || lptr->lstate==LFREE || lockard!=lockaround){
+  int checkBadLock = isbadlock(lock);
+  int checkLockState = lptr->lstate==LFREE;
+	if( checkBadLock || checkLockState || lockard!=lockaround){
 		return -1;
 	}
 	else if(lptr->lstate==LDELETED){
