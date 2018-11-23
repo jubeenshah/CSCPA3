@@ -25,10 +25,12 @@ void admit_valid_readers(int lock){
     tmppid=q[tmppid].qprev;
   }
 
-  tmppid=q[lptr->lqtail].qprev;
+  int setQTail = lptr->lqtail;
+
+  tmppid=q[setQTail].qprev;
   while(tmppid!=lptr->lqhead){
     if(q[tmppid].qtype==1 && q[tmppid].qkey>= maxpriowriter){
-      int help=q[tmppid].qprev; /* tmppid will not in the queue any more */
+      int help=q[tmppid].qprev;
       release(lock,tmppid);
       tmppid=help;
     }
