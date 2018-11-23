@@ -60,7 +60,7 @@ SYSCALL lock(int ldes1, int type, int priority) {
   pptr=&proctab[currpid];
 	pptr->plockret=1;
 
-	if(!needwait){
+	if(!needToWait){
     type==READ?lptr->nreaders++:lptr->nwriters++;
 		lptr->pidheld[currpid]=SETONE;
 		pptr->lockheld[lock]=SETONE;
@@ -130,7 +130,7 @@ void newpinh(int pid){
       int setPrio = lptr->lprio;
       if (pmaxprio<setPrio) {
         /* code */
-        pmaxprio=setPrio
+        pmaxprio=setPrio;
       }
     }
     index = index + SETONE;
