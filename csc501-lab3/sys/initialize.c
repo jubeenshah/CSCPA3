@@ -178,9 +178,16 @@ LOCAL int sysinit()
 	pptr->lockid 	= -SETONE;
 	currpid = NULLPROC;
 
-	for (i=0 ; i<NSEM ; i++) {	/* initialize semaphores */
+	// for (i=0 ; i<NSEM ; i++) {	/* initialize semaphores */
+	// 	(sptr = &semaph[i])->sstate = SFREE;
+	// 	sptr->sqtail = 1 + (sptr->sqhead = newqueue());
+	// }
+	i = SETZERO;
+	while (i < NSEM) {
+		/* code */
 		(sptr = &semaph[i])->sstate = SFREE;
-		sptr->sqtail = 1 + (sptr->sqhead = newqueue());
+		sptr->sqtail = SETONE + (sptr->sqhead = newqueue());
+		i = i + SETONE;
 	}
 
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
