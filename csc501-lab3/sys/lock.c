@@ -324,7 +324,7 @@ SYSCALL lock(int ldes1, int type, int priority){
 	/* help me check lock if this process need wait*/
 	Bool needwait=0;
 
-	int lock=ldes1/LOCKMAXAROUND;
+	int lock=ldes1/10000;
 
 	struct lentry *lptr;
 	struct pentry *pptr;
@@ -364,7 +364,7 @@ SYSCALL lock(int ldes1, int type, int priority){
 	pptr->plockret=1;
 	if(needwait){
 		pptr->pstate=PRLOCK;
-		pptr->lockid=ldes1/LOCKMAXAROUND;
+		pptr->lockid=ldes1/10000;
 		insert(currpid,lptr->lqhead,priority);
 
 		q[currpid].qtype=type;
@@ -398,8 +398,8 @@ SYSCALL lock(int ldes1, int type, int priority){
 
 	/* lock is invalid or not created.  */
 int lock_err(int ldes){
-	int lock=ldes/LOCKMAXAROUND;
-	int lockard=ldes-lock*LOCKMAXAROUND;
+	int lock=ldes/10000;
+	int lockard=ldes-lock*10000;
 	register struct lentry *lptr=&locks[lock];
 	if(isbadlock(lock) || lptr->lstate==LFREE || lockard!=lockaround){
 		return -1;
