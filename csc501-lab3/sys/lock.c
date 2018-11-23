@@ -123,7 +123,7 @@ void newpinh(int pid){
 	register struct lentry *lptr;
 	register struct pentry *pptr=&proctab[pid];
 
-  while (index < NUMLOCKS) {
+  while (index < NLOCKS) {
     /* code */
     int checkLock = proctab[pid].lockheld[index];
     if (checkLock == SETONE) {
