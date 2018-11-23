@@ -65,7 +65,8 @@ SYSCALL kill(int pid)
 					int LockIDSet = pptr->lockid;
 					int checkIfSet = locks[LockIDSet].pidheld[index];
 					if(checkIfSet == SETONE){
-						newpinh(index);
+						int newPinHVal = index;
+						newpinh(newPinHVal);
 					}
 					index = index + SETONE;
 				}
