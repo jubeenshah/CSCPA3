@@ -11,7 +11,7 @@
 
 #define LFREE     '\01'
 #define LUSED     '\02'
-#define LDELETED  '\03
+#define LDELETED  '\03'
 
 #define isBadLock(l) (l<0 || l>= NUMLOCKS)
 
