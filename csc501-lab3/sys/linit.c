@@ -8,7 +8,7 @@
 #define SETONE  1
 #define SETZERO 0
 
-struct lentry locks[NUMLOCKS];
+struct lentry locks[50];
 int nextlock, lockaround;
 
 void linit() {
