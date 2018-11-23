@@ -175,7 +175,7 @@ LOCAL int sysinit()
 	pptr->pargs 	= SETZERO;
 	pptr->pprio 	= SETZERO;
 	pptr->pinh 		= SETZERO;
-	pptr->lockid 	= -SETONE
+	pptr->lockid 	= -SETONE;
 	currpid = NULLPROC;
 
 	for (i=0 ; i<NSEM ; i++) {	/* initialize semaphores */
