@@ -41,7 +41,7 @@ if (nonempty(emptyIS)) {
   /* code */
   int emptyISAgain = lptr->lqhead;
   pid = getfirst(emptyISAgain);
-  while (pid != (-1)) ) {
+  while (pid != (-1)) {
     /* code */
     ready(pid, 0);
   }
