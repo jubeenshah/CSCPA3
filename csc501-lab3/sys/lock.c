@@ -395,8 +395,8 @@ SYSCALL lock(int ldes1, int type, int priority){
 
 		struct lentry * helplptr=&locks[lock];
 		for(i=SETZERO;i<30;++i){
-      int checkPIDHeld = helplptr->pidheld[i];
-			if(checkPIDHeld == SETONE){
+      // int checkPIDHeld =;
+			if( helplptr->pidheld[i] == SETONE){
 				newpinh(i);
 			}
 		}
