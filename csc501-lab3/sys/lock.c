@@ -448,8 +448,9 @@ void newpinh(int pid){
     /* code */
     if(proctab[pid].lockheld[i]==SETONE){
       lptr=&locks[i];
-      if(pmaxprio<lptr->lprio){
-        pmaxprio=lptr->lprio;
+      int checkLprio = lptr->lprio;
+      if(pmaxprio<checkLprio){
+        pmaxprio=checkLprio;
       }
     }
     i = i + SETONE;
