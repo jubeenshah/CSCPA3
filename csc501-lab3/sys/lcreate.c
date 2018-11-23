@@ -38,13 +38,13 @@ LOCAL int newlock(){
 			nextlock=NLOCKS-SETONE;
 			lockaround++;
 		}
-		if(locks[lock].lstate!='\01'){
-			locks[lock].lstate='\01';
+		if(locks[lock].lstate!=LUSED){
+			locks[lock].lstate=LUSED;
 			locks[lock].nreaders=SETZERO;
 			locks[lock].nwriters=SETZERO;
-			return (lock*10000+lockaround);
+			return (lock*LOCKMAXAROUND+lockaround);
 		}
 	}
 	/*no lockid available */
-	return (-1);
+	return (SYSERR);
 }
