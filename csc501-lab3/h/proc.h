@@ -9,6 +9,10 @@
 #define	NPROC		30		/*  allowed if not already done	*/
 #endif
 
+#ifndef NUMLOCKS
+#define NUMLOCKS 50
+#endif
+
 #ifndef	_NFILE
 #define _NFILE		20		/* # of files allowed */
 #endif
@@ -29,6 +33,7 @@
 #define	PRTRECV		'\010'		/* process is timing a receive	*/
 
 /* miscellaneous process definitions */
+#define PRLOCK 		'\011'
 
 #define	PNMLEN		16		/* length of process "name"	*/
 
@@ -60,6 +65,10 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;		/* pageing dgram device		*/
 	int	pwaitret;
+	int pinh;
+	int lockheld[NUMLOCKS];
+	int lockid;
+	int plockret;
 };
 
 

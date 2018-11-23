@@ -1,5 +1,5 @@
 /* create.c - create, newpid */
-    
+
 #include <conf.h>
 #include <i386.h>
 #include <kernel.h>
@@ -8,6 +8,9 @@
 #include <mem.h>
 #include <io.h>
 #include <stdio.h>
+
+#define SETZERO   0
+#define SETONE    1
 
 LOCAL int newpid();
 
@@ -25,7 +28,7 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 					/* array in the code)		*/
 {
 	unsigned long	savsp, *pushsp;
-	STATWORD 	ps;    
+	STATWORD 	ps;
 	int		pid;		/* stores new process id	*/
 	struct	pentry	*pptr;		/* pointer to proc. table entry */
 	int		i;
@@ -62,11 +65,13 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	pptr->pstklen = ssize;
 	pptr->psem = 0;
 	pptr->phasmsg = FALSE;
-	pptr->plimit = pptr->pbase - ssize + sizeof (long);	
+	pptr->plimit = pptr->pbase - ssize + sizeof (long);
 	pptr->pirmask[0] = 0;
 	pptr->pnxtkin = BADPID;
 	pptr->pdevs[0] = pptr->pdevs[1] = pptr->ppagedev = BADDEV;
 
+  pptr->pinh    = SETZERO;
+  pptr->lockid  = SETONE;
 		/* Bottom of stack */
 	*saddr = MAGIC;
 	savsp = (unsigned long)saddr;

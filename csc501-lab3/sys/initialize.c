@@ -13,11 +13,15 @@
 #include <q.h>
 #include <io.h>
 #include <stdio.h>
+#include "lock.h"
+
+#define SETONE 	1
+#define SETZERO 0
 
 /*#define DETAIL */
-#define HOLESIZE	(600)	
+#define HOLESIZE	(600)
 #define	HOLESTART	(640 * 1024)
-#define	HOLEEND		((1024 + HOLESIZE) * 1024)  
+#define	HOLEEND		((1024 + HOLESIZE) * 1024)
 
 extern	int	main();			/* address of user's main prog	*/
 extern	int	start();
@@ -74,7 +78,7 @@ int nulluser()				/* babysit CPU when no one home */
 	console_dev = SERIAL0;
 
 	initevec();
-	
+
 	sysinit();
 
 	sprintf(vers, "Xinu Version %s", VERSION);
@@ -87,25 +91,25 @@ int nulluser()				/* babysit CPU when no one home */
 
 	kprintf("%d bytes real mem\n",
 		(unsigned long) maxaddr+1);
-#ifdef DETAIL	
+#ifdef DETAIL
 	kprintf("    %d", (unsigned long) 0);
 	kprintf(" to %d\n", (unsigned long) (maxaddr) );
-#endif	
+#endif
 
 	kprintf("%d bytes Xinu code\n",
 		(unsigned long) ((unsigned long) &end - (unsigned long) start));
-#ifdef DETAIL	
+#ifdef DETAIL
 	kprintf("    %d", (unsigned long) start);
 	kprintf(" to %d\n", (unsigned long) &end );
 #endif
 
-#ifdef DETAIL	
+#ifdef DETAIL
 	kprintf("%d bytes user stack/heap space\n",
 		(unsigned long) ((unsigned long) maxaddr - (unsigned long) &end));
 	kprintf("    %d", (unsigned long) &end);
 	kprintf(" to %d\n", (unsigned long) maxaddr);
-#endif	
-	
+#endif
+
 	kprintf("clock %sabled\n", clkruns == 1?"en":"dis");
 	enable();		/* enable interrupts */
 
@@ -154,7 +158,7 @@ LOCAL int sysinit()
 		mptr->mlen = (int) truncew((unsigned)maxaddr - (int)&end -
 			NULLSTK);
 	}
-	
+
 
 	for (i=0 ; i<NPROC ; i++)	/* initialize process table */
 		proctab[i].pstate = PRFREE;
@@ -168,8 +172,10 @@ LOCAL int sysinit()
 	pptr->pesp = pptr->pbase-4;	/* for stkchk; rewritten before used */
 	*( (int *)pptr->pbase ) = MAGIC;
 	pptr->paddr = (WORD) nulluser;
-	pptr->pargs = 0;
-	pptr->pprio = 0;
+	pptr->pargs 	= SETZERO;
+	pptr->pprio 	= SETZERO;
+	pptr->pinh 		= SETZERO;
+	pptr->lockid 	= -SETONE
 	currpid = NULLPROC;
 
 	for (i=0 ; i<NSEM ; i++) {	/* initialize semaphores */
@@ -191,9 +197,9 @@ LOCAL int sysinit()
 
 	mon_init();	/* init monitor */
 //	ripinit();
-
+linit();
 #ifdef NDEVS
-	for (i=0 ; i<NDEVS ; i++ ) {	    
+	for (i=0 ; i<NDEVS ; i++ ) {
 	    init_dev(i);
 	}
 #endif
@@ -227,7 +233,7 @@ long sizmem()
 	unsigned char	*ptr, *start, stmp, tmp;
 	int		npages;
 
-	return 4096; 
+	return 4096;
 
 	start = ptr = 0;
 	npages = 0;
