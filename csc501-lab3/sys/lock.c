@@ -106,7 +106,7 @@ int lock_err(int ldes){
 	int lockard=ldes-lock*10000;
 	register struct lentry *lptr=&locks[lock];
   int checkState = lptr->lstate;
-	if(isBadLock(lock) || checkState==LFREE || lockard!=lockaround){
+	if(isbadlock(lock) || checkState==LFREE || lockard!=lockaround){
 		return -1;
 	}
 	else if(lptr->lstate==LDELETED){
