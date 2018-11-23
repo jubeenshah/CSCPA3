@@ -35,7 +35,7 @@ SYSCALL kill(int pid)
 	dev = pptr->pdevs[SETZERO];
 	if (! isbaddev(dev) )
 		close(dev);
-	dev = pptr->pdevs[1];
+	dev = pptr->pdevs[SETONE];
 	if (! isbaddev(dev) )
 		close(dev);
 	dev = pptr->ppagedev;
@@ -59,10 +59,18 @@ SYSCALL kill(int pid)
 				dequeue(pid);
 				locks[pptr->lockid].pidheld[pid]=SETZERO;
 				newlprio(pptr->lockid);
-				for(i=SETZERO;i<NPROC;++i){
+				// for(i=SETZERO;i<NPROC;++i){
+				// 	if(locks[pptr->lockid].pidheld[i]==SETONE){
+				// 		newpinh(i);
+				// 	}
+				// }
+				i = SETZERO;
+				while (i < NPROC) {
+					/* code */
 					if(locks[pptr->lockid].pidheld[i]==SETONE){
 						newpinh(i);
 					}
+					i = i + SETONE;
 				}
 				pptr->pstate=PRFREE;
 				break;
