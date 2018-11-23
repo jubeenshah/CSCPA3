@@ -45,7 +45,9 @@ LOCAL int newlock(){
       locks[lock].lstate  =LUSED;
       locks[lock].nreaders=SETZERO;
       locks[lock].nwriters=SETZERO;
-      return (lock*LOCKMAXAROUND+lockaround);
+      int valToReturn  = lock * 10000;
+      valToReturn = valToReturn + lockaround
+      return (valToReturn);
     }
     index = index + SETONE;
   }
