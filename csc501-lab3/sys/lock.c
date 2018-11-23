@@ -455,7 +455,8 @@ void newpinh(int pid){
     }
     i = i + SETONE;
   }
-	proctab[pid].pinh=(pptr->pprio>pmaxprio)?SETZERO:pmaxprio;
+  int setMaxPrio = pptr->pprio;
+	proctab[pid].pinh=(setMaxPrio>pmaxprio)?SETZERO:pmaxprio;
 }
 
 /*
