@@ -397,7 +397,7 @@ SYSCALL lock(int ldes1, int type, int priority){
     while (i < NPROC) {
       /* code */
       int checkPIDHeld = helplptr->pidheld[i];
-      if(checkPIDHeld==SETONE){
+      if(checkPIDHeld == SETONE){
 				newpinh(i);
       }
        i = i + SETONE;
@@ -406,7 +406,8 @@ SYSCALL lock(int ldes1, int type, int priority){
 
 	}
 	restore(ps);
-	return (pptr->plockret);
+  int returnValue = pptr->plockret;
+	return (returnValue);
 
 }
 
