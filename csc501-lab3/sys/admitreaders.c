@@ -12,13 +12,14 @@ void admit_valid_readers(int lock){
   register struct lentry *lptr=&locks[lock];
   int tmppid=q[lptr->lqtail].qprev;
   int maxpriowriter=-LARGENUM;/* it could be negative*/
-
-  while(tmppid!=lptr->lqhead){
+  int checkQHead = lptr->lqhead;
+  while(tmppid != checkQHead){
     int checkQtype  = q[tmppid].qtype;
     int checkQKey   = q[tmppid].qkey;
-    if(checkQtype ==(SETONE + SETONE) &&
-       checkQKey>maxpriowriter){
-      maxpriowriter=q[tmppid].qkey;
+    if(checkQtype == (SETONE + SETONE) &&
+              checkQKey>maxpriowriter){
+      int setQkey = q[tmppid].qkey;
+      maxpriowriter=setQkey;
 	  break;
     }
     tmppid=q[tmppid].qprev;
