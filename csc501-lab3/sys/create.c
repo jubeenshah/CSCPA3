@@ -50,25 +50,25 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	numproc++;
 	pptr = &proctab[pid];
 
-	pptr->fildes[0] = 0;	/* stdin set to console */
-	pptr->fildes[1] = 0;	/* stdout set to console */
-	pptr->fildes[2] = 0;	/* stderr set to console */
+	pptr->fildes[0] = SETZERO;	/* stdin set to console */
+	pptr->fildes[1] = SETZERO;	/* stdout set to console */
+	pptr->fildes[2] = SETZERO;	/* stderr set to console */
 
 	for (i=3; i < _NFILE; i++)	/* others set to unused */
 		pptr->fildes[i] = FDFREE;
 
 	pptr->pstate = PRSUSP;
-	for (i=0 ; i<PNMLEN && (int)(pptr->pname[i]=name[i])!=0 ; i++)
+	for (i=SETZERO ; i<PNMLEN && (int)(pptr->pname[i]=name[i])!=0 ; i++)
 		;
 	pptr->pprio = priority;
 	pptr->pbase = (long) saddr;
 	pptr->pstklen = ssize;
-	pptr->psem = 0;
+	pptr->psem = SETZERO;
 	pptr->phasmsg = FALSE;
 	pptr->plimit = pptr->pbase - ssize + sizeof (long);
-	pptr->pirmask[0] = 0;
+	pptr->pirmask[SETZERO] = SETZERO;
 	pptr->pnxtkin = BADPID;
-	pptr->pdevs[0] = pptr->pdevs[1] = pptr->ppagedev = BADDEV;
+	pptr->pdevs[SETZERO] = pptr->pdevs[1] = pptr->ppagedev = BADDEV;
 
   pptr->pinh    = SETZERO;
   pptr->lockid  = SETONE;
@@ -79,7 +79,7 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	/* push arguments */
 	pptr->pargs = nargs;
 	a = (unsigned long *)(&args) + (nargs-1); /* last argument	*/
-	for ( ; nargs > 0 ; nargs--)	/* machine dependent; copy args	*/
+	for ( ; nargs > SETZERO ; nargs--)	/* machine dependent; copy args	*/
 		*--saddr = *a--;	/* onto created process' stack	*/
 	*--saddr = (long)INITRET;	/* push on return address	*/
 
@@ -89,16 +89,16 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 
 /* this must match what ctxsw expects: flags, regs, old SP */
 /* emulate 386 "pushal" instruction */
-	*--saddr = 0;
-	*--saddr = 0;	/* %eax */
-	*--saddr = 0;	/* %ecx */
-	*--saddr = 0;	/* %edx */
-	*--saddr = 0;	/* %ebx */
-	*--saddr = 0;	/* %esp; fill in below */
+	*--saddr = SETZERO;
+	*--saddr = SETZERO;	/* %eax */
+	*--saddr = SETZERO;	/* %ecx */
+	*--saddr = SETZERO;	/* %edx */
+	*--saddr = SETZERO;	/* %ebx */
+	*--saddr = SETZERO;	/* %esp; fill in below */
 	pushsp = saddr;
 	*--saddr = savsp;	/* %ebp */
-	*--saddr = 0;		/* %esi */
-	*--saddr = 0;		/* %edi */
+	*--saddr = SETZERO;		/* %esi */
+	*--saddr = SETZERO;		/* %edi */
 	*pushsp = pptr->pesp = (unsigned long)saddr;
 
 	restore(ps);
