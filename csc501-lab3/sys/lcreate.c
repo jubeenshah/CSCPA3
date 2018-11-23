@@ -31,31 +31,18 @@ LOCAL int newlock(){
 	int lock;
 	int index;
 
-	// for(i=SETZERO;i<NLOCKS;++i){
-	// 	lock=nextlock--;
-	// 	if(nextlock<SETZERO){
-	// 		/* next NLOCKS around */
-	// 		nextlock=NLOCKS-SETONE;
-	// 		lockaround++;
-	// 	}
-	// 	if(locks[lock].lstate!=LUSED){
-	// 		locks[lock].lstate=LUSED;
-	// 		locks[lock].nreaders=SETZERO;
-	// 		locks[lock].nwriters=SETZERO;
-	// 		return (lock*LOCKMAXAROUND+lockaround);
-	// 	}
-	// }
   index = SETZERO;
   while (index < NLOCKS) {
     /* code */
-    lock=nextlock--;
+    nextlock = nextlock - SETONE;
+    lock=nextlock;
     if(nextlock<SETZERO){
       /* next NLOCKS around */
-      nextlock=NLOCKS-SETONE;
-      lockaround++;
+      nextlock   = NLOCKS - SETONE;
+      lockaround = lockaround + SETONE;
     }
     if(locks[lock].lstate!=LUSED){
-      locks[lock].lstate=LUSED;
+      locks[lock].lstate  =LUSED;
       locks[lock].nreaders=SETZERO;
       locks[lock].nwriters=SETZERO;
       return (lock*LOCKMAXAROUND+lockaround);
