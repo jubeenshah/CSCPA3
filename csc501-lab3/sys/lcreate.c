@@ -36,7 +36,7 @@ LOCAL int newlock(){
     /* code */
     nextlock = nextlock - SETONE;
     lock=nextlock;
-    if(nextlock<SETZERO){
+    if(nextlock < SETZERO){
       /* next NLOCKS around */
       nextlock   = NLOCKS - SETONE;
       lockaround = lockaround + SETONE;
@@ -46,11 +46,10 @@ LOCAL int newlock(){
       locks[lock].nreaders=SETZERO;
       locks[lock].nwriters=SETZERO;
       int valToReturn  = lock * 10000;
-      valToReturn = valToReturn + lockaround
+      valToReturn = valToReturn + lockaround;
       return (valToReturn);
     }
     index = index + SETONE;
   }
-	/*no lockid available */
-	return (-1);
+	return -1;
 }
