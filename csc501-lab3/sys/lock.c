@@ -380,8 +380,7 @@ SYSCALL lock(int ldes1, int type, int priority){
 	else{
     pptr->pstate=PRLOCK;
 		pptr->lockid=ldes1/10000;
-    int lqheadToPass = lptr->lqhead;
-		insert(currpid,lqheadToPass,priority);
+		insert(currpid,lptr->lqhead,priority);
 
 		q[currpid].qtype=type;
 		q[currpid].qtime=ctr1000;
@@ -394,21 +393,11 @@ SYSCALL lock(int ldes1, int type, int priority){
 		/* update the pinh of the low priority process holding the lock */
 
 		struct lentry * helplptr=&locks[lock];
-		for(i=SETZERO;i<30;++i){
-      // int checkPIDHeld =;
-			if( helplptr->pidheld[i] == SETONE){
+		for(i=SETZERO;i<NPROC;++i){
+			if(helplptr->pidheld[i]==SETONE){
 				newpinh(i);
 			}
 		}
-    // i = SETZERO;
-    // while (i < 30) {
-    //   /* code */
-    //   int checkPIDHeld = helplptr->pidheld[i];
-		// 	if(checkPIDHeld == SETONE){
-		// 		newpinh(i);
-		// 	}
-    //   i = i + 1;
-    // }
 		resched();
 
 	}
