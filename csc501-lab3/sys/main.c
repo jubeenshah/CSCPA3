@@ -1,9 +1,9 @@
-/* user.c - main */
 #include <conf.h>
 #include <kernel.h>
 #include <proc.h>
 #include <lock.h>
 #include <stdio.h>
+#include <lock.h>
 
 #define DEFAULT_LOCK_PRIO 20
 
@@ -11,7 +11,6 @@
             kprintf(error);\
             return;\
             }
-
 int mystrncmp(char* des,char* target,int n){
     int i;
     for (i=0;i<n;i++){
@@ -25,8 +24,7 @@ int mystrncmp(char* des,char* target,int n){
 
 void reader1 (char *msg, int lck)
 {
-	int ret=lock (lck, READ, DEFAULT_LOCK_PRIO);
-	assert(ret!=SYSERR&&ret!=DELETED,"lock failed.\n");
+	lock (lck, READ, DEFAULT_LOCK_PRIO);
 	kprintf ("  %s: acquired lock, sleep 2s\n", msg);
 	sleep (2);
 	kprintf ("  %s: to release lock\n", msg);
@@ -77,7 +75,7 @@ void writer2 (char msg, int lck, int lprio)
         lock (lck, WRITE, lprio);
         output2[count2++]=msg;
         kprintf ("  %c: acquired lock, sleep 3s\n", msg);
-        sleep (3);
+        sleep (1);
         output2[count2++]=msg;
         kprintf ("  %c: to release lock\n", msg);
         releaseall (1, lck);
@@ -107,7 +105,7 @@ void test2 ()
 
         kprintf("-start writer C, then sleep 1s. writer waits for the lock\n");
         resume(wr1);
-        sleep10 (1);
+        sleep (1);
 
 
         kprintf("-start reader B, D, E. reader B is granted lock.\n");
@@ -118,7 +116,8 @@ void test2 ()
 
         sleep (15);
         kprintf("output=%s\n", output2);
-        assert(mystrncmp(output2,"ABABDDCCEE",10)==0||mystrncmp(output2,"ABDADBCCEE",10)==0,"Test 2 FAILED\n");
+    // ABD(ABD in arbitrary orders)CCEE
+        assert(mystrncmp(output2,"ABABDDCCEE",10)==0,"Test 2 FAILED\n");
         kprintf ("Test 2 OK\n");
 }
 
@@ -186,116 +185,6 @@ void test3 ()
         kprintf ("Test 3 OK\n");
 }
 
-void A (char *msg, int lck1, int lck2)
-{
-        kprintf ("  %c: to acquire lock1\n", msg);
-        lock (lck1, WRITE, DEFAULT_LOCK_PRIO);
-        kprintf ("  %c: acquired lock1, sleep 2s\n", msg);
-        sleep (2);
-
-        kprintf ("  %c: to acquire lock2\n", msg);
-        lock (lck2, WRITE, DEFAULT_LOCK_PRIO);
-        kprintf ("  %c: acquired lock2, sleep 2s\n", msg);
-		sleep(2);
-        kprintf ("  %c: to release lock1, lock2\n", msg);
-
-        releaseall (2, lck1, lck2);
-}
-
-void B (char *msg, int lck1)
-{
-        kprintf ("  %c: to acquire lock2\n", msg);
-        lock (lck1, WRITE, DEFAULT_LOCK_PRIO);
-        kprintf ("  %c: acquired lock2, sleep 4s\n", msg);
-        sleep (4);
-
-        releaseall (1, lck1);
-}
-
-void C (char *msg, int lck1)
-{
-        kprintf ("  %c: to acquire lock1\n", msg);
-        lock (lck1, WRITE, DEFAULT_LOCK_PRIO);
-        kprintf ("  %c: acquired lock1, sleep 2s\n", msg);
-        sleep(2);
-        releaseall (1, lck1);
-}
-
-void test4 ()
-{
-        int     lck1, lck2;
-		int a,b,c;
-
-        kprintf("\nTest 4: test the basic priority inheritence\n");
-        lck1  = lcreate ();
-        lck2  = lcreate ();
-        assert (lck1 != SYSERR && lck2 != SYSERR, "Test 4 failed");
-
-         c = create(C, 2000, 50, "writer3", 2, 'C', lck1);
-         b = create(B, 2000, 40, "writer3", 2, 'B', lck2);
-        a = create(A, 2000, 30, "writer3", 3, 'A', lck1, lck2);
-
-        kprintf("-start A\n");
-        resume(a);
-        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
-
-         kprintf("-start B\n");
-        resume(b);
-        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
-
-         kprintf("-start C\n");
-        resume(c);
-        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
-
-		sleep(1);
-        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
-        sleep(2);
-        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
-
-        sleep (8);
-        kprintf ("Test 4 OK\n");
-}
-
-
-void reader5 (char *msg, int lck)
-{
-lock (lck, READ, DEFAULT_LOCK_PRIO);
-kprintf (" %s: acquired lock, sleep 3s\n", msg);
-sleep (3);
-kprintf (" %s: to release lock\n", msg);
-releaseall (1, lck);
-kprintf(" delete lck1\n");
-ldelete (lck); //====================================================
-}
-
-void test5 ()
-{
-int	lck1,lck2;
-int	pid1;
-int	pid2;
-int pid3;
-
-kprintf("\nTest 5: readers can share the rwlock\n");
-lck1 = lcreate ();
-assert (lck1 != SYSERR, "Test 5 failed");
-
-pid1 = create(reader5, 2000, 20, "reader a", 2, "A", lck1);
-pid2 = create(reader1, 2000, 20, "reader b", 2, "B", lck1);
-
-
-resume(pid1);
-sleep (5); //========================================================
-lck2 = lcreate (); //=====================================================
-pid3 = create(reader1, 2000, 20, "reader c", 2, "C", lck2); //==================================
-resume(pid2);
-kprintf("lck1 has been deleted, B won't work.\n");
-resume(pid3);
-
-sleep(5);
-
-kprintf ("Test 5 ok\n");
-}
-
 int main( )
 {
         /* These test cases are only used for test purpose.
@@ -305,8 +194,6 @@ int main( )
 	test1();
 	test2();
 	test3();
-	test4();
-	test5();
 
         /* The hook to shutdown QEMU for process-like execution of XINU.
          * This API call exists the QEMU process.
