@@ -17,34 +17,48 @@ SYSCALL lcreate(){
 	int lock;
 
 	disable(ps);
-
-	if((lock=newlock())==SYSERR){
+  lock=newlock();
+	if(lock == -1){
 		restore(ps);
-		return (SYSERR);
+		return (-1);
 	}
-
 	restore(ps);
 	return (lock);
 }
 
 LOCAL int newlock(){
 	int lock;
-	int i;
+	int index;
 
-	for(i=SETZERO;i<NLOCKS;++i){
-		lock=nextlock--;
-		if(nextlock<SETZERO){
-			/* next NLOCKS around */
-			nextlock=NLOCKS-SETONE;
-			lockaround++;
-		}
-		if(locks[lock].lstate!=LUSED){
-			locks[lock].lstate=LUSED;
-			locks[lock].nreaders=SETZERO;
-			locks[lock].nwriters=SETZERO;
-			return (lock*LOCKMAXAROUND+lockaround);
-		}
-	}
+	// for(index=SETZERO;index<NLOCKS;++index){
+	// 	lock=nextlock--;
+	// 	if(nextlock<SETZERO){
+	// 		nextlock=NLOCKS-SETONE;
+	// 		lockaround++;
+	// 	}
+	// 	if(locks[lock].lstate!='\01'){
+	// 		locks[lock].lstate='\01';
+	// 		locks[lock].nreaders=SETZERO;
+	// 		locks[lock].nwriters=SETZERO;
+	// 		return (lock*10000+lockaround);
+	// 	}
+	// }
+  index = SETZERO;
+  while (index < NLOCKS) {
+    /* code */
+    lock=nextlock--;
+    if(nextlock<SETZERO){
+      nextlock=NLOCKS-SETONE;
+      lockaround++;
+    }
+    if(locks[lock].lstate!='\01'){
+      locks[lock].lstate='\01';
+      locks[lock].nreaders=SETZERO;
+      locks[lock].nwriters=SETZERO;
+      return (lock*10000+lockaround);
+    }
+    index = index + SETONE;
+  }
 	/*no lockid available */
-	return (SYSERR);
+	return (-1);
 }
