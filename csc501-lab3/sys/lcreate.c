@@ -29,7 +29,7 @@ SYSCALL lcreate() {
 
 LOCAL int newLock() {
   int lock, index;
-  index = SETZERO
+  index = SETZERO;
   while (index < NUMLOCKS) {
     /* code */
     lock = nextlock - 1;
