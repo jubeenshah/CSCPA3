@@ -19,7 +19,7 @@
  */
 SYSCALL kill(int pid)
 {
-	int i;
+	int index;
 	STATWORD ps;
 	struct	pentry	*pptr;		/* points to proc. table for pid*/
 	int	dev;
@@ -59,18 +59,14 @@ SYSCALL kill(int pid)
 				dequeue(pid);
 				locks[pptr->lockid].pidheld[pid]=SETZERO;
 				newlprio(pptr->lockid);
-				// for(i=SETZERO;i<NPROC;++i){
-				// 	if(locks[pptr->lockid].pidheld[i]==SETONE){
-				// 		newpinh(i);
-				// 	}
-				// }
-				i = SETZERO;
-				while (i < NPROC) {
+				index = SETZERO;
+				while (index < NPROC) {
 					/* code */
-					if(locks[pptr->lockid].pidheld[i]==SETONE){
+					int LockIDSet = pptr->lockid;
+					if(locks[LockIDSet].pidheld[index] == SETONE){
 						newpinh(i);
 					}
-					i = i + SETONE;
+					index = index + SETONE;
 				}
 				pptr->pstate=PRFREE;
 				break;
