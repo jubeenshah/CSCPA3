@@ -18,8 +18,6 @@ void linit(){
 	nextlock   = setNextLock ;
 	int index;
   int indexDos;
-
-
   index = SETZERO;
   while (index < NLOCKS) {
     /* code */
@@ -30,7 +28,6 @@ void linit(){
     int valuToAdd = lptr->lqhead ;
 		lptr->lqtail =  SETONE + valuToAdd;
 		lptr->lprio  =  SETZERO;
-
     indexDos = SETZERO;
     while (indexDos < NPROC) {
       /* code */
@@ -38,7 +35,5 @@ void linit(){
       indexDos = indexDos + SETONE;
     }
     index = index + SETONE;
-
-
   }
 }
