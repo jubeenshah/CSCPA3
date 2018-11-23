@@ -30,9 +30,11 @@ SYSCALL lock(int ldes1, int type, int priority) {
     case -SETONE:
           restore(ps);
           return (ret);
+          break;
     case -SETSIX:
           restore(ps);
           return (ret);
+          break;
   }
 
   int checkNreader = lptr->nreaders;
@@ -88,7 +90,7 @@ SYSCALL lock(int ldes1, int type, int priority) {
       int checkPID = helplptr->pidheld[index];
       if (checkPID == SETONE) {
         /* code */
-        newpinh(index)
+        newpinh(index);
       }
       index = index + 1;
     }
