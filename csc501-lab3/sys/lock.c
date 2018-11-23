@@ -344,15 +344,20 @@ SYSCALL lock(int ldes1, int type, int priority){
 
   int checkNReaders = lptr->nreaders;
   int checkNWriters = lptr->nwriters;
-	if(checkNReaders ==SETZERO&&checkNWriters !=SETZERO){
+	if(checkNReaders == SETZERO &&
+     checkNWriters !=SETZERO){
 		needwait=1;
 		/* write lock here */
 	}
-	else if(checkNReaders!=SETZERO&&checkNWriters==SETZERO && type==(SETONE + SETONE)){
+	else if(checkNReaders != SETZERO &&
+          checkNWriters == SETZERO &&
+          type  ==(SETONE + SETONE)   ){
 		needwait=1;
 		/* read lock now but requested by write*/
 	}
-	else if(checkNReaders!=SETZERO&&checkNWriters==SETZERO && type==1){
+	else if(checkNReaders != SETZERO &&
+          checkNWriters == SETZERO &&
+          type==1){
 		lmaxprio=q[lptr->lqtail].qprev;
 		/* any higher priority writer process waiting for the lock*/
 		while(priority<q[lmaxprio].qkey){
@@ -366,18 +371,17 @@ SYSCALL lock(int ldes1, int type, int priority){
 	pptr=&proctab[currpid];
 	pptr->plockret=1;
 	if(!needwait){
-
-
     type==1?lptr->nreaders++:lptr->nwriters++;
 		lptr->pidheld[currpid]=SETONE;
 		pptr->lockheld[lock]=SETONE;
-		newpinh(currpid);
+    int pidToPass = currpid;
+		newpinh(pidToPass);
 	}
 	else{
-
     pptr->pstate=PRLOCK;
 		pptr->lockid=ldes1/10000;
-		insert(currpid,lptr->lqhead,priority);
+    int lqheadToPass = lptr->lqhead;
+		insert(currpid,lqheadToPass,priority);
 
 		q[currpid].qtype=type;
 		q[currpid].qtime=ctr1000;
