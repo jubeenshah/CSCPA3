@@ -460,13 +460,18 @@ void newlprio(int lock){
 	int maxprio = -SETONE;
   int priocompare;
 	struct lentry *tmplptr=&locks[lock];
-	int curlockid=q[tmplptr->lqtail].qprev;
-	while(q[tmplptr->lqtail].qprev != tmplptr->lqhead){
-		priocompare=(proctab[q[tmplptr->lqtail].qprev].pinh==SETZERO?proctab[q[tmplptr->lqtail].qprev].pprio:proctab[q[tmplptr->lqtail].qprev].pinh);
+  int lqtailSet = tmplptr->lqtail;
+  int lqheadSet = tmplptr->lqhead;
+	int curlockid=q[lqtailSet].qprev;
+	while(curlockid!=lqheadSet){
+    lqheadSet = tmplptr->lqhead;
+		priocompare=(proctab[curlockid].pinh==SETZERO?proctab[curlockid].pprio:proctab[curlockid].pinh);
 		if(priocompare>maxprio){
-			maxprio=priocompare;
+      int prioSet = priocompare;
+			maxprio=prioSet;
 		}
-		q[tmplptr->lqtail].qprev=q[q[tmplptr->lqtail].qprev].qprev;
+    int curLockIDSet = q[curlockid].qprev;
+		curlockid=curLockIDSet;
 	}
 	tmplptr->lprio=maxprio;
 }
