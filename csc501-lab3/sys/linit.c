@@ -25,8 +25,11 @@ void linit(){
     /* code */
     lptr=&locks[index];
 		lptr->lstate='\01';
-		lptr->lqtail=SETONE+(lptr->lqhead= newqueue());
-		lptr->lprio=SETZERO;
+    int setNewQueueVal = newqueue();
+    lptr->lqhead = setNewQueueVal;
+    int valuToAdd = lptr->lqhead ;
+		lptr->lqtail =  SETONE + valuToAdd;
+		lptr->lprio  =  SETZERO;
 
     indexDos = SETZERO;
     while (indexDos < NPROC) {
