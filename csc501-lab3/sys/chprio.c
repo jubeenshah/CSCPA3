@@ -20,11 +20,11 @@ SYSCALL chprio(int pid, int newprio)
 
 	disable(ps);
 	pptr = &proctab[pid];
-	int checkState = pptr->pstate;
+	int checkStatePID = pptr->pstate;
 	if (isbadpid(pid) || newprio<=SETZERO ||
-	    checkState == PRFREE) {
+	    checkStatePID == PRFREE) {
 		restore(ps);
-		return(SYSERR);
+		return(-1);
 	}
 	pptr->pprio = newprio;
 	newpinh(pid);
