@@ -1,9 +1,9 @@
+/* user.c - main */
 #include <conf.h>
 #include <kernel.h>
 #include <proc.h>
 #include <lock.h>
 #include <stdio.h>
-#include <lock.h>
 
 #define DEFAULT_LOCK_PRIO 20
 
@@ -12,61 +12,304 @@
             return;\
             }
 
-void writer1(char msg,int lck,int prio){
-  kprintf(" %c : to acquire lock\n",msg);
-  lock(lck,WRITE,prio);
-  kprintf(" %c : acquired lock \n",msg);
-  int i=0,j=0;
-  for(;i<100000000;++i){
-  	j++;
-  }
-  kprintf(" %c : to release lock\n",msg);
-  releaseall(1,lck);
+int mystrncmp(char* des,char* target,int n){
+    int i;
+    for (i=0;i<n;i++){
+        if (target[i] == '.') continue;
+        if (des[i] != target[i]) return 1;
+    }
+    return 0;
 }
 
-void writer2(char msg,int sem){
-  kprintf(" %c : to wait\n",msg);
-  wait(sem);
-  kprintf(" %c : wait\n",msg);
-  int i=0,j=0;
-  for(;i<100000000;++i){
-  	j++;
-  }
-  kprintf(" %c : to signal\n",msg);
-  signal(sem);
+/*--------------------------------Test 1--------------------------------*/
 
+void reader1 (char *msg, int lck)
+{
+	int ret=lock (lck, READ, DEFAULT_LOCK_PRIO);
+	assert(ret!=SYSERR&&ret!=DELETED,"lock failed.\n");
+	kprintf ("  %s: acquired lock, sleep 2s\n", msg);
+	sleep (2);
+	kprintf ("  %s: to release lock\n", msg);
+	releaseall (1, lck);
 }
 
-void writer(char msg){
-  kprintf(" %c start to write\n",msg);
-  int i=0,j=0;
-  for(;i<100000000;++i){
-  	j++;
-  }
-  kprintf(" %c write done.\n",msg);
+void test1 ()
+{
+	int	lck;
+	int	pid1;
+	int	pid2;
+
+	kprintf("\nTest 1: readers can share the rwlock\n");
+	lck  = lcreate ();
+	assert (lck != SYSERR, "Test 1 failed");
+
+	pid1 = create(reader1, 2000, 20, "reader a", 2, "reader a", lck);
+	pid2 = create(reader1, 2000, 20, "reader b", 2, "reader b", lck);
+
+	resume(pid1);
+	resume(pid2);
+
+	sleep (5);
+	ldelete (lck);
+	kprintf ("Test 1 ok\n");
 }
 
-int main(){
-  kprintf("lock with priority inheritance\n");
-  int lck=lcreate();
-  int w1a=create(writer1,2000,20,"writer1",3,'A',lck,20);
-  int w1b=create(writer1,2000,30,"writer1",3,'B',lck,20);
-  int wclock=create(writer,2000,25,"writer",1,'C');
-  resume(w1a);
-  resume(w1b);
-  resume(wclock);
+/*----------------------------------Test 2---------------------------*/
+char output2[10];
+int count2;
+void reader2 (char msg, int lck, int lprio)
+{
+        int     ret;
 
-  sleep(10);
+        kprintf ("  %c: to acquire lock\n", msg);
+        lock (lck, READ, lprio);
+        output2[count2++]=msg;
+        kprintf ("  %c: acquired lock, sleep 3s\n", msg);
+        sleep (3);
+        output2[count2++]=msg;
+        kprintf ("  %c: to release lock\n", msg);
+	releaseall (1, lck);
+}
 
-  kprintf("semaphore without priority inheritance\n");
-  int sem=screate(1);
-  int w2a=create(writer2,2000,20,"writer2",2,'A',sem);
-  int w2b=create(writer2,2000,30,"writer2",2,'B',sem);
-  int wcsem=create(writer,2000,25,"writer",1,'C');
-  resume(w2a);
-  resume(w2b);
-  resume(wcsem);
+void writer2 (char msg, int lck, int lprio)
+{
+	kprintf ("  %c: to acquire lock\n", msg);
+        lock (lck, WRITE, lprio);
+        output2[count2++]=msg;
+        kprintf ("  %c: acquired lock, sleep 3s\n", msg);
+        sleep (3);
+        output2[count2++]=msg;
+        kprintf ("  %c: to release lock\n", msg);
+        releaseall (1, lck);
+}
+
+void test2 ()
+{
+        count2 = 0;
+        int     lck;
+        int     rd1, rd2, rd3, rd4;
+        int     wr1;
+
+        kprintf("\nTest 2: wait on locks with priority. Expected order of"
+		" lock acquisition is: reader A, reader B, reader D, writer C & reader E\n");
+        lck  = lcreate ();
+        assert (lck != SYSERR, "Test 2 failed");
+
+	rd1 = create(reader2, 2000, 20, "reader2", 3, 'A', lck, 20);
+	rd2 = create(reader2, 2000, 20, "reader2", 3, 'B', lck, 30);
+	rd3 = create(reader2, 2000, 20, "reader2", 3, 'D', lck, 25);
+	rd4 = create(reader2, 2000, 20, "reader2", 3, 'E', lck, 20);
+        wr1 = create(writer2, 2000, 20, "writer2", 3, 'C', lck, 25);
+
+        kprintf("-start reader A, then sleep 1s. lock granted to reader A\n");
+        resume(rd1);
+        sleep (1);
+
+        kprintf("-start writer C, then sleep 1s. writer waits for the lock\n");
+        resume(wr1);
+        sleep10 (1);
 
 
-  return 0;
+        kprintf("-start reader B, D, E. reader B is granted lock.\n");
+        resume (rd2);
+	resume (rd3);
+	resume (rd4);
+
+
+        sleep (15);
+        kprintf("output=%s\n", output2);
+        assert(mystrncmp(output2,"ABABDDCCEE",10)==0||mystrncmp(output2,"ABDADBCCEE",10)==0,"Test 2 FAILED\n");
+        kprintf ("Test 2 OK\n");
+}
+
+/*----------------------------------Test 3---------------------------*/
+void reader3 (char *msg, int lck)
+{
+        int     ret;
+
+        kprintf ("  %s: to acquire lock\n", msg);
+        lock (lck, READ, DEFAULT_LOCK_PRIO);
+        kprintf ("  %s: acquired lock\n", msg);
+        kprintf ("  %s: to release lock\n", msg);
+        releaseall (1, lck);
+}
+
+void writer3 (char *msg, int lck)
+{
+        kprintf ("  %s: to acquire lock\n", msg);
+        lock (lck, WRITE, DEFAULT_LOCK_PRIO);
+        kprintf ("  %s: acquired lock, sleep 10s\n", msg);
+        sleep (10);
+        kprintf ("  %s: to release lock\n", msg);
+        releaseall (1, lck);
+}
+
+void test3 ()
+{
+        int     lck;
+        int     rd1, rd2;
+        int     wr1;
+
+        kprintf("\nTest 3: test the basic priority inheritence\n");
+        lck  = lcreate ();
+        assert (lck != SYSERR, "Test 3 failed");
+
+        rd1 = create(reader3, 2000, 25, "reader3", 2, "reader A", lck);
+        rd2 = create(reader3, 2000, 30, "reader3", 2, "reader B", lck);
+        wr1 = create(writer3, 2000, 20, "writer3", 2, "writer", lck);
+
+        kprintf("-start writer, then sleep 1s. lock granted to write (prio 20)\n");
+        resume(wr1);
+        sleep (1);
+
+        kprintf("-start reader A, then sleep 1s. reader A(prio 25) blocked on the lock\n");
+        resume(rd1);
+        sleep (1);
+	assert (getprio(wr1) == 25, "Test 3 failed");
+
+        kprintf("-start reader B, then sleep 1s. reader B(prio 30) blocked on the lock\n");
+        resume (rd2);
+	sleep (1);
+	assert (getprio(wr1) == 30, "Test 3 failed");
+
+	kprintf("-kill reader B, then sleep 1s\n");
+	kill (rd2);
+	sleep (1);
+	assert (getprio(wr1) == 25, "Test 3 failed");
+
+	kprintf("-kill reader A, then sleep 1s\n");
+	kill (rd1);
+	sleep(1);
+	assert(getprio(wr1) == 20, "Test 3 failed");
+
+        sleep (8);
+        kprintf ("Test 3 OK\n");
+}
+
+void A (char *msg, int lck1, int lck2)
+{
+        kprintf ("  %c: to acquire lock1\n", msg);
+        lock (lck1, WRITE, DEFAULT_LOCK_PRIO);
+        kprintf ("  %c: acquired lock1, sleep 2s\n", msg);
+        sleep (2);
+
+        kprintf ("  %c: to acquire lock2\n", msg);
+        lock (lck2, WRITE, DEFAULT_LOCK_PRIO);
+        kprintf ("  %c: acquired lock2, sleep 2s\n", msg);
+		sleep(2);
+        kprintf ("  %c: to release lock1, lock2\n", msg);
+
+        releaseall (2, lck1, lck2);
+}
+
+void B (char *msg, int lck1)
+{
+        kprintf ("  %c: to acquire lock2\n", msg);
+        lock (lck1, WRITE, DEFAULT_LOCK_PRIO);
+        kprintf ("  %c: acquired lock2, sleep 4s\n", msg);
+        sleep (4);
+
+        releaseall (1, lck1);
+}
+
+void C (char *msg, int lck1)
+{
+        kprintf ("  %c: to acquire lock1\n", msg);
+        lock (lck1, WRITE, DEFAULT_LOCK_PRIO);
+        kprintf ("  %c: acquired lock1, sleep 2s\n", msg);
+        sleep(2);
+        releaseall (1, lck1);
+}
+
+void test4 ()
+{
+        int     lck1, lck2;
+		int a,b,c;
+
+        kprintf("\nTest 4: test the basic priority inheritence\n");
+        lck1  = lcreate ();
+        lck2  = lcreate ();
+        assert (lck1 != SYSERR && lck2 != SYSERR, "Test 4 failed");
+
+         c = create(C, 2000, 50, "writer3", 2, 'C', lck1);
+         b = create(B, 2000, 40, "writer3", 2, 'B', lck2);
+        a = create(A, 2000, 30, "writer3", 3, 'A', lck1, lck2);
+
+        kprintf("-start A\n");
+        resume(a);
+        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
+
+         kprintf("-start B\n");
+        resume(b);
+        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
+
+         kprintf("-start C\n");
+        resume(c);
+        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
+
+		sleep(1);
+        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
+        sleep(2);
+        kprintf("prio A B C: %d %d %d\n", getprio(a), getprio(b), getprio(c));
+
+        sleep (8);
+        kprintf ("Test 4 OK\n");
+}
+
+
+void reader5 (char *msg, int lck)
+{
+lock (lck, READ, DEFAULT_LOCK_PRIO);
+kprintf (" %s: acquired lock, sleep 3s\n", msg);
+sleep (3);
+kprintf (" %s: to release lock\n", msg);
+releaseall (1, lck);
+kprintf(" delete lck1\n");
+ldelete (lck); //====================================================
+}
+
+void test5 ()
+{
+int	lck1,lck2;
+int	pid1;
+int	pid2;
+int pid3;
+
+kprintf("\nTest 5: readers can share the rwlock\n");
+lck1 = lcreate ();
+assert (lck1 != SYSERR, "Test 5 failed");
+
+pid1 = create(reader5, 2000, 20, "reader a", 2, "A", lck1);
+pid2 = create(reader1, 2000, 20, "reader b", 2, "B", lck1);
+
+
+resume(pid1);
+sleep (5); //========================================================
+lck2 = lcreate (); //=====================================================
+pid3 = create(reader1, 2000, 20, "reader c", 2, "C", lck2); //==================================
+resume(pid2);
+kprintf("lck1 has been deleted, B won't work.\n");
+resume(pid3);
+
+sleep(5);
+
+kprintf ("Test 5 ok\n");
+}
+
+int main( )
+{
+        /* These test cases are only used for test purpose.
+         * The provided results do not guarantee your correctness.
+         * You need to read the PA2 instruction carefully.
+         */
+	test1();
+	test2();
+	test3();
+	test4();
+	test5();
+
+        /* The hook to shutdown QEMU for process-like execution of XINU.
+         * This API call exists the QEMU process.
+         */
+        shutdown();
 }
