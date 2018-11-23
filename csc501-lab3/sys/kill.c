@@ -8,16 +8,15 @@
 #include <io.h>
 #include <q.h>
 #include <stdio.h>
-#include "lock.h"
 
-#define SETONE 	1
-#define SETZERO	0
+#include <lock.h>
 /*------------------------------------------------------------------------
  * kill  --  kill a process and remove it from the system
  *------------------------------------------------------------------------
  */
 SYSCALL kill(int pid)
 {
+	int i;
 	STATWORD ps;
 	struct	pentry	*pptr;		/* points to proc. table for pid*/
 	int	dev;
@@ -53,29 +52,21 @@ SYSCALL kill(int pid)
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
 			break;
+	case PRLOCK:
+				dequeue(pid);
+				locks[pptr->lockid].pidheld[pid]=0;
+				newlprio(pptr->lockid);
+				for(i=0;i<NPROC;++i){
+					if(locks[pptr->lockid].pidheld[i]==1){
+						newpinh(i);
+					}
+				}
+				pptr->pstate=PRFREE;
+				break;
 
 	case PRSLEEP:
 	case PRTRECV:	unsleep(pid);
 						/* fall through	*/
-	case PRLOCK:
-				dequeue(pid);
-				int getLockID = pptr->lockid;
-				locks[getLockID].pidheld[pid] = SETZERO;
-				newlprio(getLockID);
-				int index = SETZERO;
-				while (index < 30) {
-					/* code */
-					int getLockIDAgain = pptr->lockid;
-					int checkVal = locks[getLockIDAgain].pidheld[index];
-					if (checkVal == SETONE) {
-						/* code */
-						newpinh(index);
-					}
-					index = index + SETONE;
-				}
-				pptr->pstate = PRFREE;
-				break;
-
 	default:	pptr->pstate = PRFREE;
 	}
 	restore(ps);

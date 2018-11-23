@@ -5,7 +5,6 @@
 #include <proc.h>
 #include <stdio.h>
 
-#define SETZERO 	0
 /*------------------------------------------------------------------------
  * getprio -- return the scheduling priority of a given process
  *------------------------------------------------------------------------
@@ -21,10 +20,5 @@ SYSCALL getprio(int pid)
 		return(SYSERR);
 	}
 	restore(ps);
-	if (pptr->pinh == SETZERO) {
-		/* code */
-		return(pptr->pprio);
-	}
-	return(pptr->pinh);
-
+	return(pptr->pinh==0?pptr->pprio:pptr->pinh);
 }
