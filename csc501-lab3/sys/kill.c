@@ -79,5 +79,5 @@ SYSCALL kill(int pid)
 	default:	pptr->pstate = PRFREE;
 	}
 	restore(ps);
-	return(OK);
+	return 1;
 }
