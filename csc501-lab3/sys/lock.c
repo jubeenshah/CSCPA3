@@ -365,8 +365,17 @@ SYSCALL lock(int ldes1, int type, int priority){
 	}
 	pptr=&proctab[currpid];
 	pptr->plockret=1;
-	if(needwait){
-		pptr->pstate=PRLOCK;
+	if(!needwait){
+
+
+    type==1?lptr->nreaders++:lptr->nwriters++;
+		lptr->pidheld[currpid]=SETONE;
+		pptr->lockheld[lock]=SETONE;
+		newpinh(currpid);
+	}
+	else{
+
+    pptr->pstate=PRLOCK;
 		pptr->lockid=ldes1/10000;
 		insert(currpid,lptr->lqhead,priority);
 
@@ -387,12 +396,7 @@ SYSCALL lock(int ldes1, int type, int priority){
 			}
 		}
 		resched();
-	}
-	else{
-		type==1?lptr->nreaders++:lptr->nwriters++;
-		lptr->pidheld[currpid]=SETONE;
-		pptr->lockheld[lock]=SETONE;
-		newpinh(currpid);
+
 	}
 	restore(ps);
 	return (pptr->plockret);
