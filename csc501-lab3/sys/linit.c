@@ -8,17 +8,17 @@
 #define SETONE  1
 #define SETZERO 0
 
-struct lentry locks[50];
+struct lentry locks[NLOCKS];
 int nextlock, lockaround;
 
 void linit() {
   register struct lentry *lptr;
   lockaround    = SETZERO;
-  nextlock      = NUMLOCKS;
+  nextlock      = NLOCKS;
   int index     = SETZERO;
   int indexDos  = SETZERO;
 
-  while (index < NUMLOCKS) {
+  while (index < NLOCKS) {
     /* code */
     lptr=&locks[index];
     lptr->lstate  = SETONE + (lptr->lqhead=newqueue());
