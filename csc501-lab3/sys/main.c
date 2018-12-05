@@ -117,7 +117,7 @@ void test2 ()
         sleep (15);
         kprintf("output=%s\n", output2);
     // ABD(ABD in arbitrary orders)CCEE
-        assert(mystrncmp(output2,"ABDABDCCEE",10)==0,"Test 2 FAILED\n");
+        assert(mystrncmp(output2,"ABDADBCCEE",10)==0,"Test 2 FAILED\n");
         kprintf ("Test 2 OK\n");
 }
 
