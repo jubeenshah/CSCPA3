@@ -44,9 +44,7 @@ extern int lock_err(int ldes);
 extern int lockaround;
 extern int nextlock;
 
-extern void admit_valid_readers(int lock);
+extern void admiReaders(int lock);
 extern void release(int lock,int tmppid);
-
-
 
 #endif

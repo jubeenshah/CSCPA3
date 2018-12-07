@@ -76,14 +76,14 @@ int releaseall(int numlocks, int ldes1, ...){
     }
     if(readerpid>=SETZERO&&writerpid>=SETZERO){
       if(longreadertime-longwritertime<=500){
-        admit_valid_readers(lock);
+        admiReaders(lock);
       }
       else{
         release(lock,writerpid);
       }
     }
     else if(readerpid>=SETZERO){
-      admit_valid_readers(lock);
+      admiReaders(lock);
     }
     else if(writerpid>=SETZERO){
       release(lock,writerpid);

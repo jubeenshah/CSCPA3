@@ -8,7 +8,7 @@
 #define LARGENUM  9999999
 #define SETZERO   0
 #define SETONE    1
-void admit_valid_readers(int lock){
+void admiReaders(int lock){
   register struct lentry *lptr=&locks[lock];
   int tmppid, checkQHead, maxSet;
 
