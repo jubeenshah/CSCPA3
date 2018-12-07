@@ -43,7 +43,7 @@ SYSCALL kill(int pid)
 		close(dev);
 
 	send(pptr->pnxtkin, pid);
-
+	int dequeueId = pid;
 	freestk(pptr->pbase, pptr->pstklen);
 	switch (pptr->pstate) {
 
@@ -57,7 +57,7 @@ SYSCALL kill(int pid)
 			break;
 
 	case PRLOCK:
-				int dequeueId = pid;
+
 				dequeue(dequeueId);
 				locks[pptr->lockid].pidheld[pid]=SETZERO;
 				newlprio(pptr->lockid);
