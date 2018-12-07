@@ -71,7 +71,8 @@ int releaseall(int numlocks, int ldes1, ...){
           longwritertime=q[checkPIDSetIs].qtime;
           writerpid=checkPIDSetIs;
         }
-        checkPIDSetIs=q[checkPIDSetIs].qprev;
+        int setPIDVal = q[checkPIDSetIs].qprev;
+        checkPIDSetIs=setPIDVal;
     }
     if(readerpid>=SETZERO&&writerpid>=SETZERO){
       if(longreadertime-longwritertime<=500){
