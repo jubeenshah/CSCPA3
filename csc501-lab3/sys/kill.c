@@ -58,12 +58,13 @@ SYSCALL kill(int pid)
 
 	case PRLOCK:
 				dequeue(pid);
-				locks[pptr->lockid].pidheld[pid]=SETZERO;
-				newlprio(pptr->lockid);
+				int checkLockID = pptr->lockid;
+				locks[checkLockID].pidheld[pid]=SETZERO;
+				newlprio(checkLockID);
 				index = SETZERO;
 				while (index < NPROC) {
 					/* code */
-					int LockIDSet = pptr->lockid;
+					int LockIDSet = checkLockID;
 					int checkIfSet = locks[LockIDSet].pidheld[index];
 					if(checkIfSet == SETONE){
 						int newPinHVal = index;
