@@ -47,12 +47,23 @@ int releaseall(int numlocks, int ldes1, ...){
 
 
   int checkPIDSetIs=q[lptr->lqtail].qprev;
-  if(q[checkPIDSetIs].qkey==q[q[checkPIDSetIs].qprev].qkey){
+  if(q[checkPIDSetIs].qkey!=q[q[checkPIDSetIs].qprev].qkey){
 
+    if(q[checkPIDSetIs].qtype==READ && lptr->nwriters==SETZERO){
+      admit_valid_readers(lock);
+    }
+    else if(q[checkPIDSetIs].qtype==WRITE && lptr->nreaders==SETZERO){
+    release(lock,checkPIDSetIs);
+    }
+
+
+
+  }
+  else{
     tmpprio=q[checkPIDSetIs].qkey;
     while(q[checkPIDSetIs].qkey==tmpprio){
       int checkPIDSTtate = q[checkPIDSetIs].qtype;
-        if(checkPIDSTtate==1 && q[checkPIDSetIs].qtime>longreadertime){
+        if(checkPIDSTtate == 1 && q[checkPIDSetIs].qtime>longreadertime){
           longreadertime=q[checkPIDSetIs].qtime;
           readerpid=checkPIDSetIs;
         }
@@ -76,15 +87,6 @@ int releaseall(int numlocks, int ldes1, ...){
     else if(writerpid>=SETZERO){
       release(lock,writerpid);
     }
-
-  }
-  else{
-      if(q[checkPIDSetIs].qtype==READ && lptr->nwriters==SETZERO){
-        admit_valid_readers(lock);
-      }
-      else if(q[checkPIDSetIs].qtype==WRITE && lptr->nreaders==SETZERO){
-		  release(lock,checkPIDSetIs);
-      }
   }
 
   }
