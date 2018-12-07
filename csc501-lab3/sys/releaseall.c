@@ -35,15 +35,14 @@ int releaseall(int numlocks, int ldes1, ...){
     proctab[currpid].lockheld[lock]=SETZERO;
     newpinh(currpid);
 
-    if(lptr->nwriters){
-      lptr->nwriters-1;
-    }
-    else if(lptr->nreaders){
-      lptr->nreaders--;
-    }
+
 
     if(isempty(lptr->lqhead)){
       continue;
+    } else if(lptr->nwriters){
+      lptr->nwriters--;
+    } if(lptr->nreaders){
+      lptr->nreaders--;
     }
 
 
