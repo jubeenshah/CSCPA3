@@ -10,19 +10,16 @@
 #define SETONE    1
 void admit_valid_readers(int lock){
   register struct lentry *lptr=&locks[lock];
-  int tmppid, checkQHead, maxSet;
-
-  tmppid        = q[lptr->lqtail].qprev;
-  checkQHead    = lptr->lqhead;
-  maxSet        = -LARGENUM;
-
+  int tmppid=q[lptr->lqtail].qprev;
+  int checkQHead = lptr->lqhead;
+  int maxpriowriter=-LARGENUM;
   while(tmppid != checkQHead){
     int checkQtype  = q[tmppid].qtype;
     int checkQKey   = q[tmppid].qkey;
     if(checkQtype == (SETONE + SETONE) &&
-              checkQKey>maxSet){
+              checkQKey>maxpriowriter){
       int setQkey = q[tmppid].qkey;
-      maxSet=setQkey;
+      maxpriowriter=setQkey;
 	  break;
     }
     tmppid=q[tmppid].qprev;
@@ -32,12 +29,10 @@ void admit_valid_readers(int lock){
 
   tmppid=q[setQTail].qprev;
   while(tmppid!=lptr->lqhead){
-    int checkVal = q[tmppid].qtype;
-    int checkMax = q[tmppid].qkey;
-    if(checkVal  == 1 && checkMax>= maxSet){
-      //int help=q[tmppid].qprev;
+    if(q[tmppid].qtype==1 && q[tmppid].qkey>= maxpriowriter){
+      int help=q[tmppid].qprev;
       release(lock,tmppid);
-      tmppid=q[tmppid].qprev;
+      tmppid=help;
     }
 	else{
 	tmppid=q[tmppid].qprev;

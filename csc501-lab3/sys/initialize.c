@@ -199,7 +199,7 @@ LOCAL int sysinit()
 	pci_init();	/* PCI */
 
 	mon_init();	/* init monitor */
-//	ripinit();
+
 linit();
 #ifdef NDEVS
 	for (i=0 ; i<NDEVS ; i++ ) {
