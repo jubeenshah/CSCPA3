@@ -40,7 +40,8 @@ void admit_valid_readers(int lock){
       tmppid=checkHelp;
     }
 	else{
-	tmppid=q[tmppid].qprev;
+    int setVal = q[tmppid].qprev
+	tmppid=setVal;
 	}
   }
 }
