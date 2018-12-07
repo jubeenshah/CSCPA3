@@ -33,9 +33,9 @@ void admit_valid_readers(int lock){
   tmppid=q[setQTail].qprev;
   while(tmppid!=lptr->lqhead){
     if(q[tmppid].qtype==1 && q[tmppid].qkey>= maxSet){
-      //int help=q[tmppid].qprev;
+      int help=q[tmppid].qprev;
       release(lock,tmppid);
-      tmppid=q[tmppid].qprev;
+      tmppid=help;
     }
 	else{
 	tmppid=q[tmppid].qprev;
