@@ -46,20 +46,20 @@ int releaseall(int numlocks, int ldes1, ...){
     }
 
 
-  int tmppid=q[lptr->lqtail].qprev;
-  if(q[tmppid].qkey==q[q[tmppid].qprev].qkey){
+  int checkPIDSetIs=q[lptr->lqtail].qprev;
+  if(q[checkPIDSetIs].qkey==q[q[checkPIDSetIs].qprev].qkey){
 
-    tmpprio=q[tmppid].qkey;
-    while(q[tmppid].qkey==tmpprio){
-        if(q[tmppid].qtype==READ && q[tmppid].qtime>longreadertime){
-          longreadertime=q[tmppid].qtime;
-          readerpid=tmppid;
+    tmpprio=q[checkPIDSetIs].qkey;
+    while(q[checkPIDSetIs].qkey==tmpprio){
+        if(q[checkPIDSetIs].qtype==1 && q[checkPIDSetIs].qtime>longreadertime){
+          longreadertime=q[checkPIDSetIs].qtime;
+          readerpid=checkPIDSetIs;
         }
-        else if(q[tmppid].qtype==WRITE && q[tmppid].qtime>longwritertime){
-          longwritertime=q[tmppid].qtime;
-          writerpid=tmppid;
+        else if(q[checkPIDSetIs].qtype==(1+1) && q[checkPIDSetIs].qtime>longwritertime){
+          longwritertime=q[checkPIDSetIs].qtime;
+          writerpid=checkPIDSetIs;
         }
-        tmppid=q[tmppid].qprev;
+        checkPIDSetIs=q[checkPIDSetIs].qprev;
     }
     if(readerpid>=SETZERO&&writerpid>=SETZERO){
       if(longreadertime-longwritertime<=500){
@@ -78,11 +78,11 @@ int releaseall(int numlocks, int ldes1, ...){
 
   }
   else{
-      if(q[tmppid].qtype==READ && lptr->nwriters==SETZERO){
+      if(q[checkPIDSetIs].qtype==READ && lptr->nwriters==SETZERO){
         admit_valid_readers(lock);
       }
-      else if(q[tmppid].qtype==WRITE && lptr->nreaders==SETZERO){
-		  release(lock,tmppid);
+      else if(q[checkPIDSetIs].qtype==WRITE && lptr->nreaders==SETZERO){
+		  release(lock,checkPIDSetIs);
       }
   }
 
