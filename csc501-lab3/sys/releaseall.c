@@ -50,7 +50,7 @@ int releaseall(int numlocks, int ldes1, ...){
   if(q[checkPIDSetIs].qkey!=q[q[checkPIDSetIs].qprev].qkey){
 
     if(q[checkPIDSetIs].qtype==READ && lptr->nwriters==SETZERO){
-      admit_valid_readers(lock);
+      admiReaders(lock);
     }
     else if(q[checkPIDSetIs].qtype==WRITE && lptr->nreaders==SETZERO){
     release(lock,checkPIDSetIs);
