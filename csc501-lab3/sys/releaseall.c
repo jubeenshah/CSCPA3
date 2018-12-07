@@ -51,7 +51,8 @@ int releaseall(int numlocks, int ldes1, ...){
 
     tmpprio=q[checkPIDSetIs].qkey;
     while(q[checkPIDSetIs].qkey==tmpprio){
-        if(q[checkPIDSetIs].qtype==1 && q[checkPIDSetIs].qtime>longreadertime){
+      int checkPIDSTtate = q[checkPIDSetIs].qtype;
+        if(checkPIDSTtate==1 && q[checkPIDSetIs].qtime>longreadertime){
           longreadertime=q[checkPIDSetIs].qtime;
           readerpid=checkPIDSetIs;
         }
