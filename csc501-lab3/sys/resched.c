@@ -11,7 +11,7 @@ int resched()
 {
 	register struct	pentry	*optr;	/* pointer to old process entry */
 	register struct	pentry	*nptr;	/* pointer to new process entry */
-	int setTMPid = q[rdytail].qprev
+	int setTMPid = q[rdytail].qprev;
 	int tmppid=setTMPid;
 	int	reschedpid;
 	int reschedprio=-SETONE;
