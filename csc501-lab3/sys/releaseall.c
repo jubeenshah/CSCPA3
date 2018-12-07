@@ -67,7 +67,7 @@ int releaseall(int numlocks, int ldes1, ...){
           longreadertime=q[checkPIDSetIs].qtime;
           readerpid=checkPIDSetIs;
         }
-        else if(q[checkPIDSetIs].qtype==(1+1) && q[checkPIDSetIs].qtime>longwritertime){
+        else if(checkPIDSTtate==(1+1) && q[checkPIDSetIs].qtime>longwritertime){
           longwritertime=q[checkPIDSetIs].qtime;
           writerpid=checkPIDSetIs;
         }
