@@ -55,8 +55,10 @@ SYSCALL kill(int pid)
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
 			break;
+
 	case PRLOCK:
-				dequeue(pid);
+				int dequeueId = pid;
+				dequeue(dequeueId);
 				locks[pptr->lockid].pidheld[pid]=SETZERO;
 				newlprio(pptr->lockid);
 				index = SETZERO;
