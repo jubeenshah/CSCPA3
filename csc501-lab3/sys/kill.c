@@ -25,7 +25,8 @@ SYSCALL kill(int pid)
 	int	dev;
 
 	disable(ps);
-	if (isbadpid(pid) || (pptr= &proctab[pid])->pstate==PRFREE) {
+	int checkBADPIDSET = isbadpid(pid) ;
+	if (checkBADPIDSET || (pptr= &proctab[pid])->pstate==PRFREE) {
 		restore(ps);
 		return(SYSERR);
 	}
