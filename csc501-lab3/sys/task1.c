@@ -7,6 +7,7 @@
 
 #define SETONE  1
 #define SETZERO 0
+#define BIGVAL  100000000
 
 void writer1(char message,int lockPass,int prio){
   kprintf(" %c : to acquire lock\n",message);
@@ -14,7 +15,7 @@ void writer1(char message,int lockPass,int prio){
   kprintf(" %c : acquired lock \n",message);
   int index     = SETZERO;
   int indexDoes = SETZERO;
-  while (index < 100000000) {
+  while (index < BIGVAL) {
     /* code */
     index = index + SETONE;
     indexDos = indexDos + SETONE;
@@ -30,7 +31,7 @@ void writer2(char message,int semaphore){
   kprintf(" %c : wait\n",message);
   int index     = SETZERO;
   int indexDoes = SETZERO;
-  while (index < 100000000) {
+  while (index < BIGVAL) {
     /* code */
     index = index + SETONE;
     indexDos = indexDos + SETONE;
@@ -44,7 +45,7 @@ void writer(char message){
   kprintf(" %c start to write\n",message);
   int index     = SETZERO;
   int indexDoes = SETZERO;
-  while (index < 100000000) {
+  while (index < BIGVAL) {
     /* code */
     index = index + SETONE;
     indexDos = indexDos + SETONE;
