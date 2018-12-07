@@ -50,8 +50,8 @@ SYSCALL lock(int ldes1, int type, int priority){
 	else if(checkNReaders != SETZERO &&
           checkNWriters == SETZERO &&
           type==1){
-		lmaxprio=q[lptr->lqtail].qprev;
-		/* any higher priority writer process waiting for the lock*/
+					int setTail = lptr->lqtail;
+		lmaxprio=q[setTail].qprev;
 		while(priority<q[lmaxprio].qkey){
 			if(q[lmaxprio].qtype==(SETONE + SETONE)){
 				needwait=1;
