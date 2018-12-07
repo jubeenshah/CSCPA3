@@ -72,7 +72,8 @@ SYSCALL lock(int ldes1, int type, int priority){
 	else{
     pptr->pstate=PRLOCK;
 		pptr->lockid=ldes1/10000;
-		insert(currpid,lptr->lqhead,priority);
+		int passHead  = lptr->lqhead;
+		insert(currpid,passHead,priority);
 
 		q[currpid].qtype=type;
 		q[currpid].qtime=ctr1000;
