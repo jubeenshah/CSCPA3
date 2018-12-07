@@ -13,7 +13,6 @@ int releaseall(int numlocks, int ldes1, ...){
 
   register struct lentry *lptr;
   unsigned long *a=(unsigned long *)(&ldes1);
-  /* for equal lock priorities */
   int longreadertime=SETZERO,longwritertime=SETZERO;
   int readerpid=-SETONE,writerpid=-SETONE;
   int tmpprio;
@@ -37,7 +36,7 @@ int releaseall(int numlocks, int ldes1, ...){
     newpinh(currpid);
 
     if(lptr->nwriters){
-      lptr->nwriters--;
+      lptr->nwriters-1;
     }
     else if(lptr->nreaders){
       lptr->nreaders--;
