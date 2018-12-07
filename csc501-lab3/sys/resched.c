@@ -51,10 +51,10 @@ int resched()
 
 	int setCurrentPid = reschedpid;
 	currpid= setCurrentPid;
-	nptr=&proctab[currpid];
+	nptr=&proctab[setCurrentPid];
 
 	nptr->pstate = PRCURR;		/* mark it currently running	*/
-	dequeue(reschedpid);
+	dequeue(setCurrentPid);
 
 #ifdef	RTCLOCK
 	preempt = QUANTUM;		/* reset preemption counter	*/
