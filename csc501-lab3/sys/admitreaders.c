@@ -10,7 +10,7 @@
 #define SETONE    1
 void admit_valid_readers(int lock){
   register struct lentry *lptr=&locks[lock];
-  int tmppid, checkQHead, maxSet
+  int tmppid, checkQHead, maxSet;
 
   tmppid     = q[lptr->lqtail].qprev;
   checkQHead = lptr->lqhead;
