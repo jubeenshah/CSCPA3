@@ -25,7 +25,8 @@ SYSCALL kill(int pid)
 	int	dev;
 
 	disable(ps);
-	if (isbadpid(pid) || (pptr= &proctab[pid])->pstate==PRFREE) {
+	int checkBADPIDSET = isbadpid(pid) ;
+	if (checkBADPIDSET || (pptr= &proctab[pid])->pstate==PRFREE) {
 		restore(ps);
 		return(SYSERR);
 	}
@@ -55,14 +56,16 @@ SYSCALL kill(int pid)
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
 			break;
+
 	case PRLOCK:
 				dequeue(pid);
-				locks[pptr->lockid].pidheld[pid]=SETZERO;
-				newlprio(pptr->lockid);
+				int checkLockID = pptr->lockid;
+				locks[checkLockID].pidheld[pid]=SETZERO;
+				newlprio(checkLockID);
 				index = SETZERO;
 				while (index < NPROC) {
 					/* code */
-					int LockIDSet = pptr->lockid;
+					int LockIDSet = checkLockID;
 					int checkIfSet = locks[LockIDSet].pidheld[index];
 					if(checkIfSet == SETONE){
 						int newPinHVal = index;

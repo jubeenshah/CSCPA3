@@ -35,8 +35,6 @@ int releaseall(int numlocks, int ldes1, ...){
     proctab[currpid].lockheld[lock]=SETZERO;
     newpinh(currpid);
 
-
-
     if(isempty(lptr->lqhead)){
       continue;
     } else if(lptr->nwriters){
@@ -44,7 +42,6 @@ int releaseall(int numlocks, int ldes1, ...){
     } if(lptr->nreaders){
       lptr->nreaders--;
     }
-
 
   int checkPIDSetIs=q[lptr->lqtail].qprev;
   if(q[checkPIDSetIs].qkey!=q[q[checkPIDSetIs].qprev].qkey){
@@ -55,8 +52,6 @@ int releaseall(int numlocks, int ldes1, ...){
     else if(q[checkPIDSetIs].qtype==WRITE && lptr->nreaders==SETZERO){
     release(lock,checkPIDSetIs);
     }
-
-
 
   }
   else{
